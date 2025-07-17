@@ -121,24 +121,41 @@ export class Kernel {
             for (const pluginName of initOrder) {
                 const plugin = this.pluginRegistry.get(pluginName);
                 if (plugin) {
-                    await this.circuitBreaker.execute(() => plugin.initialize(this));
+                    try {
+                        await this.executePluginHook(plugin, 'onBeforeInitialize');
 
-                    // Register plugin event handlers if available
-                    if (plugin.getEventHandlers) {
-                        const handlers = plugin.getEventHandlers();
-                        handlers?.forEach(handler => {
-                            // Auto-subscribe based on handler capabilities
-                            this.eventBus.subscribe('*', handler);
+                        const oldStatus = plugin.status();
+                        await this.circuitBreaker.execute(() => plugin.initialize(this));
+                        await this.handlePluginStatusChange(plugin, oldStatus, plugin.status());
+
+                        // Register plugin event handlers if available
+                        if (plugin.getEventHandlers) {
+                            const handlers = plugin.getEventHandlers();
+                            handlers?.forEach(handler => {
+                                // Auto-subscribe based on handler capabilities
+                                this.eventBus.subscribe('*', handler);
+                            });
+                        }
+
+                        await this.executePluginHook(plugin, 'onAfterInitialize');
+
+                        await this.eventBus.publish({
+                            id: crypto.randomUUID(),
+                            type: 'kernel.plugin.initialized',
+                            payload: { pluginName },
+                            timestamp: new Date(),
+                            source: 'Kernel'
                         });
+                    } catch (error) {
+                        await this.eventBus.publish({
+                            id: crypto.randomUUID(),
+                            type: 'kernel.plugin.initialization.failed',
+                            payload: { pluginName, error: error instanceof Error ? error.message : 'Unknown error' },
+                            timestamp: new Date(),
+                            source: 'Kernel'
+                        });
+                        throw error;
                     }
-
-                    await this.eventBus.publish({
-                        id: crypto.randomUUID(),
-                        type: 'kernel.plugin.initialized',
-                        payload: { pluginName },
-                        timestamp: new Date(),
-                        source: 'Kernel'
-                    });
                 }
             }
 
@@ -173,9 +190,26 @@ export class Kernel {
             const plugin = this.pluginRegistry.get(pluginName);
             if (plugin) {
                 try {
+                    await this.executePluginHook(plugin, 'onBeforeShutdown');
+
+                    const oldStatus = plugin.status();
                     await plugin.shutdown();
+                    await this.handlePluginStatusChange(plugin, oldStatus, plugin.status());
+
+                    await this.executePluginHook(plugin, 'onAfterShutdown');
                 } catch (error) {
+                    if (plugin.hooks?.onError) {
+                        await plugin.hooks.onError(error as Error);
+                    }
                     console.error(`Error shutting down plugin ${pluginName}:`, error);
+
+                    await this.eventBus.publish({
+                        id: crypto.randomUUID(),
+                        type: 'kernel.plugin.shutdown.failed',
+                        payload: { pluginName, error: error instanceof Error ? error.message : 'Unknown error' },
+                        timestamp: new Date(),
+                        source: 'Kernel'
+                    });
                 }
             }
         }
@@ -260,5 +294,28 @@ export class Kernel {
      */
     getPlugins(): Map<string, Plugin> {
         return this.pluginRegistry.getPlugins();
+    }
+
+    private async executePluginHook(
+        plugin: Plugin,
+        hookName: 'onBeforeInitialize' | 'onAfterInitialize' | 'onBeforeShutdown' | 'onAfterShutdown'
+    ): Promise<void> {
+        if (plugin.hooks?.[hookName]) {
+            try {
+                await plugin.hooks[hookName]();
+            } catch (error) {
+                // Si hay un hook de error, lo llamamos
+                if (plugin.hooks?.onError) {
+                    await plugin.hooks.onError(error as Error);
+                }
+                throw error; // Re-lanzamos el error para manejo superior
+            }
+        }
+    }
+
+    private async handlePluginStatusChange(plugin: Plugin, oldStatus: string, newStatus: string): Promise<void> {
+        if (plugin.hooks?.onStatusChange) {
+            await plugin.hooks.onStatusChange(oldStatus as any, newStatus as any);
+        }
     }
 }
