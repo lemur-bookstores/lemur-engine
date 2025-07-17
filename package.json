@@ -1,0 +1,32 @@
+{
+  "name": "lemur-engine",
+  "version": "0.0.1",
+  "description": "Este es un microkernel que esta pensado para crear  cual quier tipo de sistema pensando en mantenibilidad, testing, escalabilidad  y con una gran recistencia a fallos",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "30.0.0",
+    "@types/node": "24.0.14",
+    "@types/semver": "^7.5.0",
+    "jest": "30.0.4",
+    "ts-jest": "29.4.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.8.3"
+  },
+  "dependencies": {
+    "semver": "^7.5.4"
+  }
+}
