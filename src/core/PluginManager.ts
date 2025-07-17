@@ -5,8 +5,8 @@ export class PluginRegistry {
     private dependencyGraph: Map<string, string[]> = new Map();
 
     register(plugin: Plugin): void {
-        this.plugins.set(plugin.name, plugin);
-        this.dependencyGraph.set(plugin.name, plugin.dependencies || []);
+        this.plugins.set(plugin.metadata.name, plugin);
+        this.dependencyGraph.set(plugin.metadata.name, plugin.metadata.dependencies || []);
     }
 
     get(name: string): Plugin | undefined {
@@ -37,6 +37,9 @@ export class PluginRegistry {
 
             const dependencies = this.dependencyGraph.get(pluginName) || [];
             for (const dep of dependencies) {
+                if (!this.plugins.has(dep)) {
+                    throw new Error(`Missing dependency: ${dep} required by ${pluginName}`);
+                }
                 visit(dep);
             }
 

@@ -123,12 +123,14 @@ export class Kernel {
                 if (plugin) {
                     await this.circuitBreaker.execute(() => plugin.initialize(this));
 
-                    // Register plugin event handlers
-                    const handlers = plugin.getEventHandlers();
-                    handlers.forEach(handler => {
-                        // Auto-subscribe based on handler capabilities
-                        this.eventBus.subscribe('*', handler);
-                    });
+                    // Register plugin event handlers if available
+                    if (plugin.getEventHandlers) {
+                        const handlers = plugin.getEventHandlers();
+                        handlers?.forEach(handler => {
+                            // Auto-subscribe based on handler capabilities
+                            this.eventBus.subscribe('*', handler);
+                        });
+                    }
 
                     await this.eventBus.publish({
                         id: crypto.randomUUID(),

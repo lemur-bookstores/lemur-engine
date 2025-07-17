@@ -21,14 +21,8 @@ export interface EventHandler<T = any> {
     canHandle(event: KernelEvent): boolean;
 }
 
-export interface Plugin {
-    name: string;
-    version: string;
-    dependencies?: string[];
-    initialize(kernel: any): Promise<void>;
-    shutdown(): Promise<void>;
-    getEventHandlers(): EventHandler[];
-}
+// Re-export plugin interfaces from core
+export { Plugin, PluginMetadata, PluginStatus, PluginLifecycleHooks } from '../core/plugins/PluginInterfaces';
 
 export interface ConfigProvider {
     get<T>(key: string): T | undefined;

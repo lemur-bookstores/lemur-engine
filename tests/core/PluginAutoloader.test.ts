@@ -22,11 +22,16 @@ describe('PluginAutoloader', () => {
             const mockPlugin: Plugin = {
                 metadata: {
                     name: 'test-plugin',
-                    version: '1.0.0'
+                    version: '1.0.0',
+                    dependencies: []
                 },
-                initialize: jest.fn(),
-                shutdown: jest.fn(),
-                status: jest.fn()
+                initialize: jest.fn().mockResolvedValue(undefined),
+                shutdown: jest.fn().mockResolvedValue(undefined),
+                status: jest.fn().mockReturnValue('UNINITIALIZED'),
+                hooks: {
+                    onBeforeInitialize: jest.fn().mockResolvedValue(undefined),
+                    onAfterInitialize: jest.fn().mockResolvedValue(undefined)
+                }
             };
 
             jest.spyOn(autoloader['pluginLoader'], 'loadPlugins')

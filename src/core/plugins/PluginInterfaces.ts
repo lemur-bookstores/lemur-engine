@@ -1,3 +1,4 @@
+import { EventHandler } from '../../types';
 import { Kernel } from '../Kernel';
 
 export interface PluginMetadata {
@@ -5,6 +6,8 @@ export interface PluginMetadata {
     version: string;
     dependencies?: string[];
     description?: string;
+    author?: string;
+    tags?: string[];
 }
 
 export interface Plugin {
@@ -12,6 +15,8 @@ export interface Plugin {
     initialize(kernel: Kernel): Promise<void>;
     shutdown(): Promise<void>;
     status(): PluginStatus;
+    getEventHandlers?(): EventHandler[];
+    hooks?: PluginLifecycleHooks;
 }
 
 export enum PluginStatus {
@@ -29,4 +34,5 @@ export interface PluginLifecycleHooks {
     onBeforeShutdown?: () => Promise<void>;
     onAfterShutdown?: () => Promise<void>;
     onError?: (error: Error) => Promise<void>;
+    onStatusChange?: (oldStatus: PluginStatus, newStatus: PluginStatus) => Promise<void>;
 }
