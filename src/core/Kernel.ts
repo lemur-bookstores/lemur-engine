@@ -19,10 +19,12 @@ import {
 import { ConfigurationManager } from './ConfigurationFlyweight';
 import { RetryHandler } from './RetryHandler';
 import { Bulkhead } from './Bulkhead';
+import { PluginAutoloader } from './plugins/PluginAutoloader';
 
 export class Kernel {
     private eventBus: EventBus;
     private pluginRegistry: PluginRegistry;
+    private pluginAutoloader: PluginAutoloader;
     private serviceContainer: ServiceContainer;
     private configManager: ConfigManager;
     private circuitBreaker: CircuitBreaker;
@@ -68,6 +70,9 @@ export class Kernel {
             timeout: 5000
         });
 
+        // Inicializar autoloader de plugins
+        this.pluginAutoloader = new PluginAutoloader(this, this.eventBus);
+
         this.registerCoreServices();
         this.setupErrorHandlers();
     }
@@ -98,12 +103,18 @@ export class Kernel {
         this.serviceContainer.register('bulkhead', () => this.bulkhead);
     }
 
+    /**
+     * Inicializa el kernel y carga los plugins automáticamente
+     */
     async initialize(): Promise<void> {
         if (this.isInitialized) {
             throw new Error('Kernel already initialized');
         }
 
         try {
+            // Iniciar carga automática de plugins
+            await this.pluginAutoloader.startAutoload();
+
             // Initialize plugins in dependency order
             const initOrder = this.pluginRegistry.getInitializationOrder();
 
