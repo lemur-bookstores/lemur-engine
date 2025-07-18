@@ -1,14 +1,6 @@
 import { EventEmitter } from 'events';
 import { Kernel } from '../Kernel';
-
-export interface Plugin {
-    name: string;
-    version: string;
-    dependencies?: string[];
-    initialize(kernel: Kernel): Promise<void>;
-    shutdown(): Promise<void>;
-    status: () => PluginStatus;
-}
+import { Plugin } from './PluginInterfaces';
 
 export enum PluginStatus {
     UNINITIALIZED = 'UNINITIALIZED',
@@ -31,15 +23,15 @@ export class PluginRegistry extends EventEmitter {
     }
 
     async register(plugin: Plugin): Promise<void> {
-        if (this.plugins.has(plugin.name)) {
-            throw new Error(`Plugin ${plugin.name} is already registered`);
+        if (this.plugins.has(plugin.metadata.name)) {
+            throw new Error(`Plugin ${plugin.metadata.name} is already registered`);
         }
 
-        this.plugins.set(plugin.name, plugin);
-        this.status.set(plugin.name, PluginStatus.UNINITIALIZED);
+        this.plugins.set(plugin.metadata.name, plugin);
+        this.status.set(plugin.metadata.name, PluginStatus.UNINITIALIZED);
 
-        if (plugin.dependencies) {
-            this.dependencies.set(plugin.name, new Set(plugin.dependencies));
+        if (plugin.metadata.dependencies) {
+            this.dependencies.set(plugin.metadata.name, new Set(plugin.metadata.dependencies));
         }
 
         this.emit('plugin:registered', plugin);
