@@ -1,81 +1,116 @@
 // 1. Definir interfaces para las configuraciones
 export interface RetryConfig {
     maxAttempts: number;
-    initialDelay: number;
-    maxDelay: number;
-    timeout: number;
+    delay: number;
+    backoffFactor: number;
+    retryableErrors?: string[];
+    initialDelay?: number;
+    maxDelay?: number;
+    timeout?: number;
     backoffStrategy?: 'exponential' | 'linear' | 'fixed';
 }
 
 export interface BulkheadConfig {
     maxConcurrent: number;
-    maxQueued: number;
-    timeout: number;
+    maxQueueSize: number;
+    queueTimeout: number;
+    maxQueued?: number;
+    timeout?: number;
     rejectionStrategy?: 'throw' | 'queue' | 'drop';
 }
 
 export interface CircuitBreakerConfig {
+    enabled: boolean;
     failureThreshold: number;
     resetTimeout: number;
-    monitoringPeriod: number;
+    halfOpenSuccessThreshold: number;
+    failureCondition?: (error: Error) => boolean;
+    monitoringPeriod?: number;
+}
+
+export interface ConsoleHandlerConfig {
     enabled: boolean;
+    level?: 'error' | 'warn' | 'info' | 'debug'; // Opcional con valor por defecto
+}
+
+export interface FileHandlerConfig {
+    enabled: boolean;
+    path: string;
+    maxSize?: string; // Opcional con valor por defecto
+    maxFiles?: number; // Opcional con valor por defecto
+}
+
+export interface MetricsConfig {
+    enabled: boolean;
+    storage?: 'console' | 'file' | 'database'; // Opcional con valor por defecto
+    aggregationInterval?: number; // Opcional con valor por defecto
 }
 
 export interface ErrorHandlerConfig {
-    console: {
-        enabled: boolean;
-        level: 'error' | 'warn' | 'info' | 'debug';
-    };
-    file: {
-        enabled: boolean;
-        path: string;
-        maxSize: string;
-        maxFiles: number;
-    };
-    metrics: {
-        enabled: boolean;
-        storage: 'console' | 'file' | 'database';
-        aggregationInterval: number;
-    };
+    console: ConsoleHandlerConfig;
+    file: FileHandlerConfig;
+    metrics?: MetricsConfig; // Opcional
+}
+
+export interface AutoloadConfig {
+    enabled: boolean;
+    directories: string[];
+    patterns?: string[];
+    watchMode?: boolean;
+}
+
+export interface InitializationConfig {
+    parallel?: boolean;
+    timeout?: number;
+    failureStrategy?: 'fail-fast' | 'continue' | 'retry';
+}
+
+export interface PluginMetadata {
+    name: string;
+    version: string;
+    enabled: boolean;
+    dependencies?: string[];
+    config?: Record<string, any>;
 }
 
 export interface PluginConfig {
-    autoload: {
-        enabled: boolean;
-        directories: string[];
-        patterns: string[];
-        watchMode: boolean;
-    };
-    initialization: {
-        parallel: boolean;
-        timeout: number;
-        failureStrategy: 'fail-fast' | 'continue' | 'retry';
-    };
+    metadata: PluginMetadata;
+    autoload: AutoloadConfig;
+    initialization?: InitializationConfig;
+}
+
+export interface LoggingConfig {
+    level?: 'error' | 'warn' | 'info' | 'debug'; // Opcional con valor por defecto
+    format?: 'json' | 'text'; // Opcional con valor por defecto
+    destination?: 'console' | 'file' | 'both'; // Opcional con valor por defecto
+}
+
+export interface EventsConfig {
+    maxListeners?: number; // Opcional con valor por defecto
+    asyncTimeout?: number; // Opcional con valor por defecto
 }
 
 export interface KernelConfig {
     environment: 'development' | 'staging' | 'production';
+    version: string;
     retry: RetryConfig;
+    plugins: PluginMetadata[];
     bulkhead: BulkheadConfig;
     circuitBreaker: CircuitBreakerConfig;
     errorHandler: ErrorHandlerConfig;
-    plugin: PluginConfig;
-    logging: {
-        level: 'error' | 'warn' | 'info' | 'debug';
-        format: 'json' | 'text';
-        destination: 'console' | 'file' | 'both';
-    };
-    events: {
-        maxListeners: number;
-        asyncTimeout: number;
-    };
+    pluginConfig: PluginConfig;
+    logging: LoggingConfig;
+    events?: EventsConfig;
 }
 
 // 2. Configuraciones por defecto
 export const defaultKernelConfig: KernelConfig = {
     environment: 'development',
+    version: '1.0.0',
     retry: {
         maxAttempts: 3,
+        delay: 1000,
+        backoffFactor: 2,
         initialDelay: 1000,
         maxDelay: 5000,
         timeout: 30000,
@@ -83,15 +118,18 @@ export const defaultKernelConfig: KernelConfig = {
     },
     bulkhead: {
         maxConcurrent: 10,
+        maxQueueSize: 100,
+        queueTimeout: 5000,
         maxQueued: 20,
         timeout: 5000,
         rejectionStrategy: 'throw'
     },
     circuitBreaker: {
+        enabled: true,
         failureThreshold: 5,
         resetTimeout: 60000,
-        monitoringPeriod: 10000,
-        enabled: true
+        halfOpenSuccessThreshold: 3,
+        monitoringPeriod: 10000
     },
     errorHandler: {
         console: {
@@ -110,7 +148,13 @@ export const defaultKernelConfig: KernelConfig = {
             aggregationInterval: 5000
         }
     },
-    plugin: {
+    plugins: [],
+    pluginConfig: {
+        metadata: {
+            name: 'default',
+            version: '1.0.0',
+            enabled: true
+        },
         autoload: {
             enabled: true,
             directories: ['./plugins'],
