@@ -49,4 +49,16 @@ export class ServiceContainer {
     clearScope(): void {
         this.scopedInstances.clear();
     }
+
+    has(key: string): boolean {
+        return this.services.has(key);
+    }
+
+    get(key: string): ServiceDescriptor | undefined {
+        return this.services.get(key);
+    }
+
+    size(): number {
+        return this.services.size;
+    }
 }
