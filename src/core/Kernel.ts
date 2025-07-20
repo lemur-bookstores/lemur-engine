@@ -6,7 +6,7 @@ import { CircuitBreaker } from './CircuitBreaker';
 import { Plugin, KernelEvent } from '../types';
 import { ErrorHandlerService } from './ErrorHandlerService';
 import { ConsoleErrorHandler, LogErrorHandler, MetricsErrorHandler } from '../services/ErrorHandlers';
-import { FileLogStorage, ConsoleMetricsStorage } from '../services/storage/StorageImplementations';
+import { FileLogStorage, ConsoleMetricsStorage, InMemoryMetricsStorage } from '../services/storage/StorageImplementations';
 import { KernelMediator } from './KernelMediator';
 import {
     KernelState,
@@ -20,75 +20,165 @@ import { ConfigurationManager } from './ConfigurationFlyweight';
 import { RetryHandler } from './RetryHandler';
 import { Bulkhead } from './Bulkhead';
 import { PluginAutoloader } from './plugins/PluginAutoloader';
+import { defaultKernelConfig, KernelConfig } from './config/types';
+import { ConfigLoader } from './config/ConfigLoader';
+import { MetricsStorage } from './interfaces/storage';
 
 export class Kernel {
-    private eventBus: EventBus;
-    private pluginRegistry: PluginRegistry;
-    private pluginAutoloader: PluginAutoloader;
-    private serviceContainer: ServiceContainer;
-    private configManager: ConfigManager;
-    private circuitBreaker: CircuitBreaker;
-    private errorHandler: ErrorHandlerService;
-    private mediator: KernelMediator;
-    private stateManager: KernelStateManager;
-    private configFlyweight: ConfigurationManager;
+    private config: KernelConfig;
+    private eventBus!: EventBus;
+    private pluginRegistry!: PluginRegistry;
+    private serviceContainer!: ServiceContainer;
+    private configManager!: ConfigManager;
+    private circuitBreaker!: CircuitBreaker;
+    private errorHandler!: ErrorHandlerService;
+    private mediator!: KernelMediator;
+    private configFlyweight!: ConfigurationManager;
+    private stateManager!: KernelStateManager;
+    private retryHandler!: RetryHandler;
+    private bulkhead!: Bulkhead;
+    private pluginAutoloader!: PluginAutoloader;
     private isInitialized = false;
-    private retryHandler: RetryHandler;
-    private bulkhead: Bulkhead;
 
-    constructor() {
+    constructor(config?: KernelConfig) {
+        this.config = config || defaultKernelConfig;
+        this.initializeComponents();
+        this.registerCoreServices();
+        this.setupErrorHandlers();
+    }
+
+    private initializeComponents(): void {
         // Inicializar componentes core
         this.eventBus = new EventBus();
         this.pluginRegistry = new PluginRegistry();
         this.serviceContainer = new ServiceContainer();
         this.configManager = new ConfigManager();
-        this.circuitBreaker = new CircuitBreaker();
+
+        // Inicializar circuit breaker con configuración
+        this.circuitBreaker = new CircuitBreaker(
+            this.config.circuitBreaker.failureThreshold,
+            this.config.circuitBreaker.resetTimeout
+        );
+
         this.errorHandler = new ErrorHandlerService(this.eventBus);
         this.mediator = new KernelMediator();
         this.configFlyweight = new ConfigurationManager();
 
-        // Crear state manager primero
+        // Crear state manager
         const stateHandlers = new Map();
         this.stateManager = new KernelStateManager(stateHandlers);
 
-        // Luego configurar los estados
+        // Configurar los estados
         stateHandlers.set(KernelState.INITIALIZING, new InitializingState(this.stateManager));
         stateHandlers.set(KernelState.RUNNING, new RunningState(this.stateManager));
         stateHandlers.set(KernelState.MAINTENANCE, new MaintenanceState(this.stateManager));
 
-        // Inicializar patrones de resiliencia
-        this.retryHandler = new RetryHandler({
-            maxAttempts: 3,
-            initialDelay: 1000,
-            maxDelay: 5000,
-            timeout: 30000
-        });
+        // Inicializar patrones de resiliencia con configuración
+        this.retryHandler = new RetryHandler(this.config.retry);
+        this.bulkhead = new Bulkhead(this.config.bulkhead);
 
-        this.bulkhead = new Bulkhead({
-            maxConcurrent: 10,
-            maxQueued: 20,
-            timeout: 5000
-        });
-
-        // Inicializar autoloader de plugins
+        // Inicializar autoloader de plugins con configuración
         this.pluginAutoloader = new PluginAutoloader(this, this.eventBus);
-
-        this.registerCoreServices();
-        this.setupErrorHandlers();
     }
 
     private setupErrorHandlers(): void {
-        // Registrar manejadores de errores predeterminados
-        this.errorHandler.registerHandler(new ConsoleErrorHandler());
+        const { errorHandler } = this.config;
 
-        // Crear implementaciones de almacenamiento
-        const logStorage = new FileLogStorage('./logs');
-        const metricsStorage = new ConsoleMetricsStorage();
+        // Registrar manejadores según configuración
+        if (errorHandler.console.enabled) {
+            this.errorHandler.registerHandler(
+                new ConsoleErrorHandler()
+            );
+        }
 
-        // Registrar handlers con sus respectivos almacenamientos
-        this.errorHandler.registerHandler(new LogErrorHandler(logStorage));
-        this.errorHandler.registerHandler(new MetricsErrorHandler(metricsStorage));
+        if (errorHandler.file.enabled) {
+            const logStorage = new FileLogStorage(
+                errorHandler.file.path,
+                // errorHandler.file.maxSize,
+                // errorHandler.file.maxFiles
+            );
+            this.errorHandler.registerHandler(new LogErrorHandler(logStorage));
+        }
+
+        if (errorHandler.metrics.enabled) {
+            const metricsStorage = this.createMetricsStorage(errorHandler.metrics.storage);
+            this.errorHandler.registerHandler(
+                new MetricsErrorHandler(metricsStorage, /*errorHandler.metrics.aggregationInterval*/)
+            );
+        }
     }
+
+    private createMetricsStorage(type: string): MetricsStorage {
+        switch (type) {
+            case 'console':
+                return new ConsoleMetricsStorage();
+            case 'file':
+            // return new FileMetricsStorage('./metrics');
+            case 'database':
+            // return new DatabaseMetricsStorage();
+            default:
+                return new InMemoryMetricsStorage();
+        }
+    }
+
+    // Método estático para crear Kernel con configuración externa
+    static async create(configPath?: string): Promise<Kernel> {
+        const config = await ConfigLoader.loadConfig(configPath);
+        return new Kernel(config);
+    }
+
+    // Método para obtener la configuración actual
+    getConfig(): KernelConfig {
+        return { ...this.config };
+    }
+
+    // Método para actualizar configuración en tiempo de ejecución
+    async updateConfig(newConfig: Partial<KernelConfig>): Promise<void> {
+        const updatedConfig = ConfigLoader.mergeConfigs(this.config, newConfig);
+        ConfigLoader.validateConfig(updatedConfig);
+
+        this.config = updatedConfig;
+
+        // Reinicializar componentes que dependan de la configuración
+        await this.reinitializeConfigurableComponents();
+
+        await this.eventBus.publish({
+            id: crypto.randomUUID(),
+            type: 'kernel.config.updated',
+            payload: { config: updatedConfig },
+            timestamp: new Date(),
+            source: 'Kernel'
+        });
+    }
+
+    private async reinitializeConfigurableComponents(): Promise<void> {
+        // Reinicializar componentes que dependan de la configuración
+        // Esto podría requerir lógica específica para cada componente
+
+        // Por ejemplo, reinicializar retry handler
+        this.retryHandler = new RetryHandler(this.config.retry);
+
+        // Reinicializar bulkhead
+        this.bulkhead = new Bulkhead(this.config.bulkhead);
+
+        // Reregistrar en el service container
+        this.serviceContainer.register('retryHandler', () => this.retryHandler);
+        this.serviceContainer.register('bulkhead', () => this.bulkhead);
+    }
+
+
+    // private setupErrorHandlers(): void {
+    //     // Registrar manejadores de errores predeterminados
+    //     this.errorHandler.registerHandler(new ConsoleErrorHandler());
+
+    //     // Crear implementaciones de almacenamiento
+    //     const logStorage = new FileLogStorage('./logs');
+    //     const metricsStorage = new ConsoleMetricsStorage();
+
+    //     // Registrar handlers con sus respectivos almacenamientos
+    //     this.errorHandler.registerHandler(new LogErrorHandler(logStorage));
+    //     this.errorHandler.registerHandler(new MetricsErrorHandler(metricsStorage));
+    // }
 
     private registerCoreServices(): void {
         this.serviceContainer.register('eventBus', () => this.eventBus);
