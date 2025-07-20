@@ -1,8 +1,9 @@
 import { defaultKernelConfig, KernelConfig } from './types';
+import { BaseConfigLoader } from './base/BaseConfigLoader';
 
-// 3. Loader de configuración
-export class ConfigLoader {
-    private static readonly CONFIG_PATHS = [
+// Implementación concreta del ConfigLoader
+export class ConfigLoader extends BaseConfigLoader {
+    private readonly CONFIG_PATHS = [
         './config/kernel.json',
         './config/kernel.js',
         './config/kernel.ts',
@@ -11,7 +12,28 @@ export class ConfigLoader {
         './kernel.config.ts'
     ];
 
-    static async loadConfig(configPath?: string): Promise<KernelConfig> {
+    private static instance: ConfigLoader;
+
+    // Patrón Singleton para mantener compatibilidad con código existente
+    public static getInstance(): ConfigLoader {
+        if (!ConfigLoader.instance) {
+            ConfigLoader.instance = new ConfigLoader();
+        }
+        return ConfigLoader.instance;
+    }
+
+    // Constructor privado para Singleton
+    private constructor() {
+        super();
+    }
+
+    // Método estático para mantener compatibilidad con código existente
+    public static async loadConfig(configPath?: string): Promise<KernelConfig> {
+        return ConfigLoader.getInstance().loadConfig(configPath);
+    }
+
+    // Implementación del método abstracto
+    public async loadConfig(configPath?: string): Promise<KernelConfig> {
         let config = { ...defaultKernelConfig };
 
         // 1. Cargar configuración desde archivo
@@ -39,7 +61,7 @@ export class ConfigLoader {
         return config;
     }
 
-    private static async loadFromFile(filePath: string, baseConfig: KernelConfig): Promise<KernelConfig> {
+    private async loadFromFile(filePath: string, baseConfig: KernelConfig): Promise<KernelConfig> {
         try {
             const fs = await import('fs/promises');
             const path = await import('path');
@@ -69,26 +91,43 @@ export class ConfigLoader {
         }
     }
 
-    private static loadFromEnvironment(config: KernelConfig): KernelConfig {
+    private loadFromEnvironment(config: KernelConfig): KernelConfig {
         const envConfig: Partial<KernelConfig> = {};
 
         // Mapear variables de entorno
         const envMappings = {
             'KERNEL_ENV': 'environment',
+            'KERNEL_VERSION': 'version',
+
+            // Retry config
             'KERNEL_RETRY_MAX_ATTEMPTS': 'retry.maxAttempts',
-            'KERNEL_RETRY_INITIAL_DELAY': 'retry.initialDelay',
-            'KERNEL_RETRY_MAX_DELAY': 'retry.maxDelay',
-            'KERNEL_RETRY_TIMEOUT': 'retry.timeout',
+            'KERNEL_RETRY_DELAY': 'retry.delay',
+            'KERNEL_RETRY_BACKOFF_FACTOR': 'retry.backoffFactor',
+            'KERNEL_RETRY_RETRYABLE_ERRORS': 'retry.retryableErrors',
+
+            // Bulkhead config
             'KERNEL_BULKHEAD_MAX_CONCURRENT': 'bulkhead.maxConcurrent',
-            'KERNEL_BULKHEAD_MAX_QUEUED': 'bulkhead.maxQueued',
-            'KERNEL_BULKHEAD_TIMEOUT': 'bulkhead.timeout',
+            'KERNEL_BULKHEAD_MAX_QUEUE_SIZE': 'bulkhead.maxQueueSize',
+            'KERNEL_BULKHEAD_QUEUE_TIMEOUT': 'bulkhead.queueTimeout',
+
+            // Circuit breaker config
             'KERNEL_CIRCUIT_BREAKER_ENABLED': 'circuitBreaker.enabled',
             'KERNEL_CIRCUIT_BREAKER_FAILURE_THRESHOLD': 'circuitBreaker.failureThreshold',
             'KERNEL_CIRCUIT_BREAKER_RESET_TIMEOUT': 'circuitBreaker.resetTimeout',
+            'KERNEL_CIRCUIT_BREAKER_HALF_OPEN_SUCCESS': 'circuitBreaker.halfOpenSuccessThreshold',
+
+            // Logging config
             'KERNEL_LOG_LEVEL': 'logging.level',
             'KERNEL_LOG_FORMAT': 'logging.format',
-            'KERNEL_PLUGIN_AUTOLOAD_ENABLED': 'plugin.autoload.enabled',
-            'KERNEL_PLUGIN_AUTOLOAD_DIRECTORIES': 'plugin.autoload.directories',
+
+            // Plugin config
+            'KERNEL_PLUGIN_CONFIG_NAME': 'pluginConfig.metadata.name',
+            'KERNEL_PLUGIN_CONFIG_VERSION': 'pluginConfig.metadata.version',
+            'KERNEL_PLUGIN_CONFIG_ENABLED': 'pluginConfig.metadata.enabled',
+            'KERNEL_PLUGIN_CONFIG_AUTOLOAD_ENABLED': 'pluginConfig.autoload.enabled',
+            'KERNEL_PLUGIN_CONFIG_AUTOLOAD_DIRECTORIES': 'pluginConfig.autoload.directories',
+
+            // Error handler config
             'KERNEL_ERROR_HANDLER_CONSOLE_ENABLED': 'errorHandler.console.enabled',
             'KERNEL_ERROR_HANDLER_FILE_ENABLED': 'errorHandler.file.enabled',
             'KERNEL_ERROR_HANDLER_FILE_PATH': 'errorHandler.file.path'
@@ -104,7 +143,7 @@ export class ConfigLoader {
         return this.mergeConfigs(config, envConfig);
     }
 
-    private static parseEnvValue(value: string): any {
+    private parseEnvValue(value: string): any {
         // Intentar parsear como JSON
         if (value.startsWith('[') || value.startsWith('{')) {
             try {
@@ -125,7 +164,7 @@ export class ConfigLoader {
         return value;
     }
 
-    private static setNestedProperty(obj: any, path: string, value: any): void {
+    private setNestedProperty(obj: any, path: string, value: any): void {
         const keys = path.split('.');
         let current = obj;
 
@@ -140,7 +179,7 @@ export class ConfigLoader {
         current[keys[keys.length - 1]] = value;
     }
 
-    static mergeConfigs(base: KernelConfig, override: Partial<KernelConfig>): KernelConfig {
+    protected mergeConfigs(base: KernelConfig, override: Partial<KernelConfig>): KernelConfig {
         const result = { ...base };
 
         Object.entries(override).forEach(([key, value]) => {
@@ -160,35 +199,64 @@ export class ConfigLoader {
         return result;
     }
 
-    static validateConfig(config: KernelConfig): void {
-        // Validaciones básicas
-        if (config.retry.maxAttempts < 1) {
-            throw new Error('retry.maxAttempts must be at least 1');
-        }
+    public validateConfig(config: KernelConfig): void {
+        // Llamar a la validación de la clase base
+        super.validateConfig(config);
 
-        if (config.retry.initialDelay < 0) {
-            throw new Error('retry.initialDelay must be non-negative');
-        }
-
-        if (config.bulkhead.maxConcurrent < 1) {
-            throw new Error('bulkhead.maxConcurrent must be at least 1');
-        }
-
-        if (config.bulkhead.maxQueued < 0) {
-            throw new Error('bulkhead.maxQueued must be non-negative');
-        }
-
-        if (config.circuitBreaker.failureThreshold < 1) {
-            throw new Error('circuitBreaker.failureThreshold must be at least 1');
-        }
-
+        // Validar environment
         if (!['development', 'staging', 'production'].includes(config.environment)) {
             throw new Error('environment must be one of: development, staging, production');
         }
 
-        // Validar directorios de plugins
-        if (config.plugin.autoload.enabled && config.plugin.autoload.directories.length === 0) {
-            throw new Error('plugin.autoload.directories cannot be empty when autoload is enabled');
+        // Validar version
+        if (!config.version) {
+            throw new Error('version must be specified');
+        }
+
+        // Validaciones de retry (si está configurado)
+        if (config.retry) {
+            if (config.retry.maxAttempts < 1) {
+                throw new Error('retry.maxAttempts must be at least 1');
+            }
+            if (config.retry.delay < 0) {
+                throw new Error('retry.delay must be non-negative');
+            }
+            if (config.retry.backoffFactor < 1) {
+                throw new Error('retry.backoffFactor must be at least 1');
+            }
+        }
+
+        // Validaciones de bulkhead (si está configurado)
+        if (config.bulkhead) {
+            if (config.bulkhead.maxConcurrent < 1) {
+                throw new Error('bulkhead.maxConcurrent must be at least 1');
+            }
+            if (config.bulkhead.maxQueueSize < 0) {
+                throw new Error('bulkhead.maxQueueSize must be non-negative');
+            }
+            if (config.bulkhead.queueTimeout < 0) {
+                throw new Error('bulkhead.queueTimeout must be non-negative');
+            }
+        }
+
+        // Validaciones de circuit breaker (si está configurado)
+        if (config.circuitBreaker) {
+            if (config.circuitBreaker.failureThreshold < 0 || config.circuitBreaker.failureThreshold > 1) {
+                throw new Error('circuitBreaker.failureThreshold must be between 0 and 1');
+            }
+            if (config.circuitBreaker.resetTimeout < 0) {
+                throw new Error('circuitBreaker.resetTimeout must be non-negative');
+            }
+            if (config.circuitBreaker.halfOpenSuccessThreshold < 1) {
+                throw new Error('circuitBreaker.halfOpenSuccessThreshold must be at least 1');
+            }
+        }
+
+        // Validar configuración de plugins
+        if (config.pluginConfig?.autoload?.enabled) {
+            if (!config.pluginConfig.autoload.directories || config.pluginConfig.autoload.directories.length === 0) {
+                throw new Error('pluginConfig.autoload.directories cannot be empty when autoload is enabled');
+            }
         }
     }
 }
