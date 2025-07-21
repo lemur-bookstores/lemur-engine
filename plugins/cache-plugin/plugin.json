@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Plugin de ejemplo que implementa un servicio de caché en memoria",
   "author": "Lemur Engine Team",
+  "entry": "index.ts",
   "tags": ["cache", "memory", "example"],
   "dependencies": []
 }

@@ -10,6 +10,17 @@ export interface RetryOptions {
     retryableErrors?: Array<string | RegExp>;
 }
 
+export interface RetryConfig {
+    maxAttempts: number;
+    delay: number;
+    backoffFactor: number;
+    retryableErrors?: Array<string | RegExp>;
+    initialDelay?: number;
+    maxDelay?: number;
+    timeout?: number;
+    backoffStrategy?: 'exponential' | 'linear' | 'fixed';
+}
+
 /**
  * Implementación del Retry Pattern con backoff exponencial
  */

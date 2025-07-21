@@ -1,17 +1,10 @@
 import { defaultKernelConfig, KernelConfig } from './types';
 import { BaseConfigLoader } from './base/BaseConfigLoader';
+import { findUp } from '../../utils';
+import path from 'path';
 
 // Implementación concreta del ConfigLoader
 export class ConfigLoader extends BaseConfigLoader {
-    private readonly CONFIG_PATHS = [
-        './config/kernel.json',
-        './config/kernel.js',
-        './config/kernel.ts',
-        './kernel.config.json',
-        './kernel.config.js',
-        './kernel.config.ts'
-    ];
-
     private static instance: ConfigLoader;
 
     // Patrón Singleton para mantener compatibilidad con código existente
@@ -40,15 +33,18 @@ export class ConfigLoader extends BaseConfigLoader {
         if (configPath) {
             config = await this.loadFromFile(configPath, config);
         } else {
-            // Buscar archivos de configuración en orden de prioridad
-            for (const path of this.CONFIG_PATHS) {
+            // Buscar kernel.config.json usando findUp desde el directorio src
+            const srcDir = path.resolve(__dirname, '../../..'); // Subir desde src/core/config hasta la raíz del proyecto
+            const configFile = await findUp('kernel.config.json', srcDir);
+
+            if (configFile) {
                 try {
-                    config = await this.loadFromFile(path, config);
-                    break;
+                    config = await this.loadFromFile(configFile, config);
                 } catch (error) {
-                    // Continuar buscando si el archivo no existe
-                    continue;
+                    console.warn(`Failed to load config from ${configFile}:`, error);
                 }
+            } else {
+                console.warn('kernel.config.json not found, using default configuration');
             }
         }
 

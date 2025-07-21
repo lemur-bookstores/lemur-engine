@@ -1,6 +1,7 @@
 import { Plugin } from './PluginInterfaces';
 import fs from 'fs/promises';
 import path from 'path';
+import { findUp } from '../../utils';
 
 export interface PluginMetadata {
     name: string;
@@ -55,15 +56,12 @@ export class PluginLoader {
     private async loadSinglePlugin(pluginDir: string): Promise<Plugin | null> {
         try {
             const pluginPath = path.join(this.pluginsDir, pluginDir);
-            const metadataPath = path.join(pluginPath, 'plugin.json');
 
-            // Verificar si existe el archivo de metadata
-            const metadataExists = await fs.access(metadataPath)
-                .then(() => true)
-                .catch(() => false);
+            // Buscar plugin.json usando findUp desde el directorio del plugin
+            const metadataPath = await findUp('plugin.json', pluginPath);
 
-            if (!metadataExists) {
-                console.warn(`No metadata found for plugin in directory: ${pluginDir}`);
+            if (!metadataPath) {
+                console.warn(`No plugin.json found for plugin in directory: ${pluginDir}`);
                 return null;
             }
 
@@ -74,8 +72,9 @@ export class PluginLoader {
                 return null;
             }
 
-            // Cargar el módulo del plugin
-            const entryPath = path.join(pluginPath, metadata.entry);
+            // Cargar el módulo del plugin (buscar desde el directorio donde se encontró plugin.json)
+            const pluginBaseDir = path.dirname(metadataPath);
+            const entryPath = path.join(pluginBaseDir, metadata.entry);
             const pluginModule = require(entryPath);
 
             // Verificar que el módulo exporta una clase de plugin válida

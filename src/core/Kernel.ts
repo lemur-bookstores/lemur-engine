@@ -74,8 +74,22 @@ export class Kernel {
         stateHandlers.set(KernelState.MAINTENANCE, new MaintenanceState(this.stateManager));
 
         // Inicializar patrones de resiliencia con configuración
-        this.retryHandler = new RetryHandler(this.config.retry);
-        this.bulkhead = new Bulkhead(this.config.bulkhead);
+        // this.retryHandler = new RetryHandler(this.config.retry); <- Corregir compatibilidad de interface
+        // this.bulkhead = new Bulkhead(this.config.bulkhead); <- Corregir compatibilidad de interface
+        this.retryHandler = new RetryHandler({
+            maxAttempts: this.config.retry.maxAttempts,
+            initialDelay: this.config.retry.initialDelay ?? 0,
+            maxDelay: this.config.retry.maxDelay ?? 0,
+            // exponentialBase: this.config.retry.exponentialBase,
+            timeout: this.config.retry.timeout,
+            retryableErrors: this.config.retry.retryableErrors,
+        }); // this.config.retry
+
+        this.bulkhead = new Bulkhead({
+            maxConcurrent: this.config.bulkhead.maxConcurrent,
+            maxQueued: this.config.bulkhead.maxQueued ?? 255,
+            timeout: this.config.bulkhead.timeout,
+        }); // this.config.bulkhead
 
         // Inicializar autoloader de plugins con configuración
         this.pluginAutoloader = new PluginAutoloader(this, this.eventBus);
@@ -100,8 +114,8 @@ export class Kernel {
             this.errorHandler.registerHandler(new LogErrorHandler(logStorage));
         }
 
-        if (errorHandler.metrics.enabled) {
-            const metricsStorage = this.createMetricsStorage(errorHandler.metrics.storage);
+        if (errorHandler?.metrics && errorHandler?.metrics?.enabled) {
+            const metricsStorage = this.createMetricsStorage(errorHandler.metrics.storage || 'any');
             this.errorHandler.registerHandler(
                 new MetricsErrorHandler(metricsStorage, /*errorHandler.metrics.aggregationInterval*/)
             );
@@ -132,10 +146,31 @@ export class Kernel {
         return { ...this.config };
     }
 
+    private mergeConfigs(base: KernelConfig, override: Partial<KernelConfig>): KernelConfig {
+        const result = { ...base };
+
+        Object.entries(override).forEach(([key, value]) => {
+            if (value !== undefined) {
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    // Merge recursivo para objetos
+                    result[key as keyof KernelConfig] = {
+                        ...result[key as keyof KernelConfig] as any,
+                        ...value
+                    } as any;
+                } else {
+                    result[key as keyof KernelConfig] = value as any;
+                }
+            }
+        });
+
+        return result;
+    }
+
     // Método para actualizar configuración en tiempo de ejecución
     async updateConfig(newConfig: Partial<KernelConfig>): Promise<void> {
-        const updatedConfig = ConfigLoader.mergeConfigs(this.config, newConfig);
-        ConfigLoader.validateConfig(updatedConfig);
+        const configLoader = ConfigLoader.getInstance();
+        const updatedConfig = this.mergeConfigs(this.config, newConfig);
+        configLoader.validateConfig(updatedConfig);
 
         this.config = updatedConfig;
 
@@ -156,10 +191,21 @@ export class Kernel {
         // Esto podría requerir lógica específica para cada componente
 
         // Por ejemplo, reinicializar retry handler
-        this.retryHandler = new RetryHandler(this.config.retry);
+        // this.retryHandler = new RetryHandler(this.config.retry);
 
         // Reinicializar bulkhead
-        this.bulkhead = new Bulkhead(this.config.bulkhead);
+        // this.bulkhead = new Bulkhead(this.config.bulkhead);
+
+        // this.retryHandler = new RetryHandler(this.config.retry); <- Corregir compatibilidad de interface
+        // this.bulkhead = new Bulkhead(this.config.bulkhead); <- Corregir compatibilidad de interface
+        this.retryHandler = new RetryHandler({
+            maxAttempts: this.config.retry.maxAttempts,
+            initialDelay: this.config.retry.initialDelay ?? 0,
+            maxDelay: this.config.retry.maxDelay ?? 0,
+            // exponentialBase: this.config.retry.exponentialBase,
+            timeout: this.config.retry.timeout,
+            retryableErrors: this.config.retry.retryableErrors,
+        }); // this.config.retry
 
         // Reregistrar en el service container
         this.serviceContainer.register('retryHandler', () => this.retryHandler);
