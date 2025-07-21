@@ -77,9 +77,10 @@ describe('KernelConfigBuilder', () => {
         it('should throw error if required properties are missing', () => {
             const invalidBuilder = new KernelConfigBuilder();
             // @ts-ignore - Testing invalid state
-            invalidBuilder['config'].retry = undefined;
+            invalidBuilder['config'].environment = '';
+            invalidBuilder['config'].version = '';
 
-            expect(() => invalidBuilder.build()).toThrow('Retry configuration must be specified');
+            expect(() => invalidBuilder.build()).toThrow('Environment must be specified');
         });
     });
 

@@ -2,18 +2,29 @@ import { PluginAutoloader } from '../../src/core/plugins/PluginAutoloader';
 import { Kernel } from '../../src/core/Kernel';
 import { EventBus } from '../../src/core/EventBus';
 import { Plugin } from '../../src/core/plugins/PluginInterfaces';
+import { defaultKernelConfig } from '../../src/core/config/types';
 import path from 'path';
 
+// Mock del Kernel para evitar problemas de inicialización
+jest.mock('../../src/core/Kernel');
+
 describe('PluginAutoloader', () => {
-    let kernel: Kernel;
+    let mockKernel: jest.Mocked<Kernel>;
     let eventBus: EventBus;
     let autoloader: PluginAutoloader;
     const testPluginsPath = path.join(__dirname, '../fixtures/plugins');
 
     beforeEach(() => {
-        kernel = new Kernel();
+        // Crear un mock del Kernel
+        mockKernel = {
+            getConfig: jest.fn().mockReturnValue(defaultKernelConfig),
+            initialize: jest.fn(),
+            getPlugins: jest.fn().mockReturnValue(new Map()),
+            // Añadir otras propiedades necesarias
+        } as any;
+
         eventBus = new EventBus();
-        autoloader = new PluginAutoloader(kernel, eventBus, testPluginsPath);
+        autoloader = new PluginAutoloader(mockKernel, eventBus, testPluginsPath);
     });
 
     describe('startAutoload', () => {
@@ -41,12 +52,12 @@ describe('PluginAutoloader', () => {
             await autoloader.startAutoload();
 
             // Assert
-            expect(kernel.getPlugins().has('test-plugin')).toBeTruthy();
+            expect(mockKernel.getPlugins().has('test-plugin')).toBeTruthy();
         });
 
         it('debería manejar timeout correctamente', async () => {
             // Arrange
-            autoloader = new PluginAutoloader(kernel, eventBus, testPluginsPath, 100);
+            autoloader = new PluginAutoloader(mockKernel, eventBus, testPluginsPath, 100);
             jest.spyOn(autoloader['pluginLoader'], 'loadPlugins')
                 .mockImplementation(() => new Promise(resolve => setTimeout(resolve, 200)));
 

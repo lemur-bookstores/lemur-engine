@@ -5,11 +5,6 @@ class TestService {
     public readonly id = Math.random();
 }
 
-// Una clase de servicio con dependencias
-class DependentService {
-    constructor(public testService: TestService) { }
-}
-
 describe('ServiceContainer', () => {
     let container: ServiceContainer;
 

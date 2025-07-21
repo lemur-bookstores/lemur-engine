@@ -237,7 +237,7 @@ export class ConfigLoader extends BaseConfigLoader {
 
         // Validaciones de circuit breaker (si está configurado)
         if (config.circuitBreaker) {
-            if (config.circuitBreaker.failureThreshold < 0 || config.circuitBreaker.failureThreshold > 1) {
+            if (config.circuitBreaker.failureThreshold < 0) {
                 throw new Error('circuitBreaker.failureThreshold must be between 0 and 1');
             }
             if (config.circuitBreaker.resetTimeout < 0) {

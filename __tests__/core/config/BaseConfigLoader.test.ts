@@ -7,29 +7,28 @@ class TestConfigLoader extends BaseConfigLoader {
     public async loadConfig(): Promise<KernelConfig> {
         const config: KernelConfig = {
             environment: 'development',
-            version: '',
+            version: '1.0.0',
             plugins: [],
             retry: {
                 maxAttempts: 3,
                 initialDelay: 100,
                 maxDelay: 1000,
                 timeout: 5000,
-                delay: 0,
-                backoffFactor: 0
+                delay: 1000,
+                backoffFactor: 2
             },
             bulkhead: {
                 maxConcurrent: 10,
                 maxQueued: 20,
                 timeout: 3000,
-                maxQueueSize: 0,
-                queueTimeout: 0
+                maxQueueSize: 100,
+                queueTimeout: 5000
             },
             circuitBreaker: {
                 enabled: true,
-                failureThreshold: 5,
+                failureThreshold: 0.5,
                 resetTimeout: 30000,
-
-                halfOpenSuccessThreshold: 0
+                halfOpenSuccessThreshold: 2
             },
             logging: {
                 level: 'info',
@@ -65,8 +64,8 @@ class TestConfigLoader extends BaseConfigLoader {
     }
 
     // Método para testing
-    public testNotifyConfigChange(oldConfig: KernelConfig, newConfig: KernelConfig): void {
-        this.notifyConfigChange(oldConfig, newConfig);
+    public async testNotifyConfigChange(oldConfig: KernelConfig, newConfig: KernelConfig): Promise<void> {
+        await this.notifyConfigChange(oldConfig, newConfig);
     }
 
     // Método para testing
@@ -101,7 +100,7 @@ describe('BaseConfigLoader', () => {
                 environment: 'production' as const
             };
 
-            configLoader.testNotifyConfigChange(oldConfig, newConfig);
+            await configLoader.testNotifyConfigChange(oldConfig, newConfig);
 
             expect(mockListener1.onConfigChange).toHaveBeenCalledWith(oldConfig, newConfig);
             expect(mockListener2.onConfigChange).toHaveBeenCalledWith(oldConfig, newConfig);
@@ -118,7 +117,7 @@ describe('BaseConfigLoader', () => {
                 environment: 'production' as const
             };
 
-            configLoader.testNotifyConfigChange(oldConfig, newConfig);
+            await configLoader.testNotifyConfigChange(oldConfig, newConfig);
 
             expect(mockListener1.onConfigChange).toHaveBeenCalled();
             expect(mockListener2.onConfigChange).not.toHaveBeenCalled();
@@ -141,9 +140,9 @@ describe('BaseConfigLoader', () => {
             };
 
             // No debería lanzar error
-            expect(() => {
-                configLoader.testNotifyConfigChange(oldConfig, newConfig);
-            }).not.toThrow();
+            await expect(async () => {
+                await configLoader.testNotifyConfigChange(oldConfig, newConfig);
+            }).resolves.not.toThrow();
 
             // El segundo listener debería ser llamado incluso si el primero falla
             expect(mockListener1.onConfigChange).toHaveBeenCalled();
@@ -208,26 +207,26 @@ describe('BaseConfigLoader', () => {
                     initialDelay: 100,
                     maxDelay: 1000,
                     timeout: 5000,
-                    delay: 0,
-                    backoffFactor: 0
+                    delay: 1000,
+                    backoffFactor: 2
                 },
                 bulkhead: {
                     maxConcurrent: 10,
                     maxQueued: 20,
                     timeout: 3000,
-                    maxQueueSize: 0,
-                    queueTimeout: 0
+                    maxQueueSize: 100,
+                    queueTimeout: 5000
                 },
                 circuitBreaker: {
                     enabled: true,
-                    failureThreshold: 5,
+                    failureThreshold: 0.5,
                     resetTimeout: 30000,
-                    halfOpenSuccessThreshold: 0
+                    halfOpenSuccessThreshold: 2
                 },
                 logging: {},
                 pluginConfig: {
                     metadata: {
-                        name: '',
+                        name: 'test-plugin',
                         version: '1.0.0',
                         enabled: false
                     },
