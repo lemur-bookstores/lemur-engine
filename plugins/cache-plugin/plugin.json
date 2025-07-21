@@ -1,0 +1,8 @@
+{
+  "name": "cache-plugin",
+  "version": "1.0.0",
+  "description": "Plugin de ejemplo que implementa un servicio de caché en memoria",
+  "author": "Lemur Engine Team",
+  "tags": ["cache", "memory", "example"],
+  "dependencies": []
+}
