@@ -86,8 +86,12 @@ export class CachePlugin implements Plugin {
                 console.log(`Cache event received: ${event.type}`, event.payload);
             },
             canHandle: function (event: KernelEvent): boolean {
-                throw new Error('Function not implemented.');
+                // Determinar si este handler puede manejar el evento
+                return event.type.startsWith('cache.');
             }
         }];
     }
 }
+
+// Export default para que PluginLoader pueda cargar la clase
+export default CachePlugin;
