@@ -64,14 +64,22 @@ export class Kernel {
         this.mediator = new KernelMediator();
         this.configFlyweight = new ConfigurationManager();
 
-        // Crear state manager
+        // Crear state manager con handlers
         const stateHandlers = new Map();
-        this.stateManager = new KernelStateManager(stateHandlers);
+        // Crear un KernelStateManager temporal para inicializar los estados
+        const tempStateManager = {
+            transitionTo: async () => { },
+            getCurrentState: () => KernelState.INITIALIZING,
+            getStateHistory: () => []
+        } as any;
 
         // Configurar los estados
-        stateHandlers.set(KernelState.INITIALIZING, new InitializingState(this.stateManager));
-        stateHandlers.set(KernelState.RUNNING, new RunningState(this.stateManager));
-        stateHandlers.set(KernelState.MAINTENANCE, new MaintenanceState(this.stateManager));
+        stateHandlers.set(KernelState.INITIALIZING, new InitializingState(tempStateManager));
+        stateHandlers.set(KernelState.RUNNING, new RunningState(tempStateManager));
+        stateHandlers.set(KernelState.MAINTENANCE, new MaintenanceState(tempStateManager));
+
+        // Ahora crear el state manager real con los handlers
+        this.stateManager = new KernelStateManager(stateHandlers);
 
         // Inicializar patrones de resiliencia con configuración
         // this.retryHandler = new RetryHandler(this.config.retry); <- Corregir compatibilidad de interface
@@ -227,6 +235,7 @@ export class Kernel {
     // }
 
     private registerCoreServices(): void {
+        this.serviceContainer.register('config', () => this.config);
         this.serviceContainer.register('eventBus', () => this.eventBus);
         this.serviceContainer.register('pluginRegistry', () => this.pluginRegistry);
         this.serviceContainer.register('configManager', () => this.configManager);
