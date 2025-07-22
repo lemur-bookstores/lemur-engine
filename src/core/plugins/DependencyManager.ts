@@ -18,11 +18,54 @@ export class DependencyManager {
         this.plugins = new Map(plugins);
         this.buildDependencyGraph(plugins);
 
+        // Validar que todas las dependencias existan
+        this.validateAllDependenciesExist(plugins);
+
         if (this.hasCyclicDependencies()) {
-            throw new Error('Se detectaron dependencias cíclicas');
+            const cycles = this.findCycles();
+            throw new Error(`Circular dependencies detected: ${JSON.stringify(cycles)}`);
         }
 
         return this.getLoadOrder();
+    }
+
+    /**
+     * Valida que todas las dependencias declaradas existan
+     */
+    private validateAllDependenciesExist(plugins: Map<string, Plugin>): void {
+        const missingDependencies = new Map<string, string[]>();
+
+        plugins.forEach((plugin) => {
+            const missing = this.getMissingDependencies(plugin, plugins);
+            if (missing.length > 0) {
+                missingDependencies.set(plugin.metadata.name, missing);
+            }
+        });
+
+        if (missingDependencies.size > 0) {
+            const errorMessage = Array.from(missingDependencies.entries())
+                .map(([plugin, deps]) => `${plugin}: [${deps.join(', ')}]`)
+                .join(', ');
+            throw new Error(`Missing dependencies for plugins: ${errorMessage}`);
+        }
+    }
+
+    /**
+     * Obtiene las dependencias faltantes de un plugin
+     */
+    private getMissingDependencies(plugin: Plugin, availablePlugins: Map<string, Plugin>): string[] {
+        const dependencies = plugin.metadata.dependencies || [];
+        return dependencies.filter(dep => {
+            const [depName] = dep.split('@'); // Separar nombre de versión si existe
+            return !availablePlugins.has(depName);
+        });
+    }
+
+    /**
+     * Encuentra todos los ciclos en el grafo de dependencias
+     */
+    private findCycles(): string[][] {
+        return this.dependencyGraph.findCycles();
     }
 
     /**

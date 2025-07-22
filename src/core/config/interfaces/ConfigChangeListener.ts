@@ -7,11 +7,11 @@ export interface ConfigChangeListener {
      * @param oldConfig Configuración anterior
      * @param newConfig Nueva configuración
      */
-    onConfigChange?(oldConfig: KernelConfig, newConfig: KernelConfig): void;
+    onConfigChange?(oldConfig: KernelConfig, newConfig: KernelConfig): Promise<void>;
 
     /**
      * Método llamado para cualquier evento de configuración
      * @param event Evento de configuración
      */
-    onEvent?(event: ConfigChangeEvent): void;
+    onEvent?(event: ConfigChangeEvent): Promise<void>;
 }

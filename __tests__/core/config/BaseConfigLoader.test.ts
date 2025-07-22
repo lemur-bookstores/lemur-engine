@@ -82,10 +82,10 @@ describe('BaseConfigLoader', () => {
     beforeEach(() => {
         configLoader = new TestConfigLoader();
         mockListener1 = {
-            onConfigChange: jest.fn()
+            onConfigChange: jest.fn().mockResolvedValue(undefined)
         };
         mockListener2 = {
-            onConfigChange: jest.fn()
+            onConfigChange: jest.fn().mockResolvedValue(undefined)
         };
     });
 
@@ -125,7 +125,7 @@ describe('BaseConfigLoader', () => {
 
         it('should handle errors in listeners gracefully', async () => {
             const errorListener: ConfigChangeListener = {
-                onConfigChange: () => {
+                onConfigChange: async () => {
                     throw new Error('Listener error');
                 }
             };

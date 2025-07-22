@@ -92,4 +92,23 @@ export abstract class BaseConfigLoader implements IConfigLoader {
 
         return result;
     }
+
+    /**
+     * Método para testing: permite acceso directo a notifyConfigChange
+     */
+    async testNotifyConfigChange(oldConfig: KernelConfig, newConfig: KernelConfig): Promise<void> {
+        // Primero notificar a los listeners locales
+        for (const listener of this.listeners) {
+            try {
+                if (listener.onConfigChange) {
+                    await listener.onConfigChange(oldConfig, newConfig);
+                }
+            } catch (error) {
+                console.error('Error in config change listener:', error);
+            }
+        }
+
+        // Luego notificar a través del EventManager
+        await this.notifyConfigChange(oldConfig, newConfig);
+    }
 }

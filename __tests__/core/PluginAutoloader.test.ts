@@ -15,11 +15,17 @@ describe('PluginAutoloader', () => {
     const testPluginsPath = path.join(__dirname, '../fixtures/plugins');
 
     beforeEach(() => {
+        // Crear un mapa de plugins para el mock
+        const pluginsMap = new Map();
+
         // Crear un mock del Kernel
         mockKernel = {
             getConfig: jest.fn().mockReturnValue(defaultKernelConfig),
             initialize: jest.fn(),
-            getPlugins: jest.fn().mockReturnValue(new Map()),
+            getPlugins: jest.fn().mockReturnValue(pluginsMap),
+            registerPlugin: jest.fn().mockImplementation((plugin: Plugin) => {
+                pluginsMap.set(plugin.metadata.name, plugin);
+            }),
             // Añadir otras propiedades necesarias
         } as any;
 
