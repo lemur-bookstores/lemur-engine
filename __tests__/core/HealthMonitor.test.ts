@@ -1,5 +1,4 @@
 import { HealthMonitor } from '../../src/core/HealthMonitor';
-import { HealthCheck } from '../../src/types';
 
 describe('HealthMonitor', () => {
     let healthMonitor: HealthMonitor;

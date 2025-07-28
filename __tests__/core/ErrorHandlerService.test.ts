@@ -96,11 +96,12 @@ describe('ErrorHandlerService', () => {
         let testError: KernelError;
 
         beforeEach(() => {
-            testError = new KernelError('Test error', { 
-                code: 'TEST_001', 
-                details: { test: true }, 
-                sourceModule: 'TestModule' 
-            });
+            testError = new KernelError(
+                'Test error', 
+                'TEST_001', 
+                { test: true }, 
+                'TestModule'
+            );
         });
 
         it('should handle error with appropriate handler', async () => {
@@ -253,12 +254,10 @@ describe('ErrorHandlerService', () => {
         beforeEach(() => {
             criticalError = new KernelError(
                 'Critical error',
-                {
-                    code: 'CRIT_001',
-                    details: { severity: 'high' },
-                    sourceModule: 'CriticalModule',
-                    isCritical: true
-                }
+                'CRIT_001',
+                { severity: 'high' },
+                'CriticalModule',
+                true
             );
         });
 
@@ -291,7 +290,7 @@ describe('ErrorHandlerService', () => {
 
             errorHandlerService.registerHandler(asyncHandler);
 
-            const asyncError = new KernelError('Async error', { code: 'ASYNC_001' });
+            const asyncError = new KernelError('Async error', 'ASYNC_001');
             await errorHandlerService.handleError(asyncError);
 
             expect(mockEventBus.publish).toHaveBeenCalled();
@@ -305,7 +304,7 @@ describe('ErrorHandlerService', () => {
 
             errorHandlerService.registerHandler(syncHandler);
 
-            const syncError = new KernelError('Sync error', { code: 'SYNC_001' });
+            const syncError = new KernelError('Sync error', 'SYNC_001');
             await errorHandlerService.handleError(syncError);
 
             expect(mockEventBus.publish).toHaveBeenCalled();
@@ -325,12 +324,10 @@ describe('ErrorHandlerService', () => {
 
             const complexError = new KernelError(
                 'Complex error',
-                {
-                    code: 'COMPLEX_001',
-                    details: { type: 'complex' },
-                    sourceModule: 'ComplexModule',
-                    isCritical: true
-                }
+                'COMPLEX_001',
+                { type: 'complex' },
+                'ComplexModule',
+                true
             );
 
             await errorHandlerService.handleError(complexError);
@@ -345,14 +342,14 @@ describe('ErrorHandlerService', () => {
             mockHandler1.handleError.mockResolvedValue(undefined);
             errorHandlerService.registerHandler(mockHandler1);
 
-            const testError = new KernelError('Test', { code: 'TEST_001' });
+            const testError = new KernelError('Test', 'TEST_001');
             await errorHandlerService.handleError(testError);
 
             expect(mockEventBus.publish).toHaveBeenCalled();
         });
 
         it('should emit correct event structure for unhandled errors', async () => {
-            const testError = new KernelError('Test', { code: 'TEST_001' });
+            const testError = new KernelError('Test', 'TEST_001');
             await errorHandlerService.handleError(testError);
 
             expect(mockEventBus.publish).toHaveBeenCalled();
@@ -376,7 +373,7 @@ describe('ErrorHandlerService', () => {
 
             errorHandlerService.registerHandler(undefinedHandler);
 
-            const testError = new KernelError('Test', { code: 'TEST_001' });
+            const testError = new KernelError('Test', 'TEST_001');
             await errorHandlerService.handleError(testError);
 
             expect(mockEventBus.publish).toHaveBeenCalled();
@@ -390,7 +387,7 @@ describe('ErrorHandlerService', () => {
 
             errorHandlerService.registerHandler(nullHandler);
 
-            const testError = new KernelError('Test', { code: 'TEST_001' });
+            const testError = new KernelError('Test', 'TEST_001');
             await errorHandlerService.handleError(testError);
 
             expect(mockEventBus.publish).toHaveBeenCalled();
@@ -416,7 +413,7 @@ describe('ErrorHandlerService', () => {
             };
             errorHandlerService.registerHandler(finalHandler);
 
-            const testError = new KernelError('Test', { code: 'TEST_001' });
+            const testError = new KernelError('Test', 'TEST_001');
             await errorHandlerService.handleError(testError);
 
             expect(mockEventBus.publish).toHaveBeenCalled();
@@ -430,7 +427,7 @@ describe('ErrorHandlerService', () => {
             errorHandlerService.registerHandler(mockHandler1);
 
             const errors = Array.from({ length: 10 }, (_, i) => 
-                new KernelError(`Error ${i}`, { code: `ERR_${i}` })
+                new KernelError(`Error ${i}`, `ERR_${i}`)
             );
 
             const promises = errors.map(error => errorHandlerService.handleError(error));

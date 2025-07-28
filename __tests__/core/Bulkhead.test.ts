@@ -1,4 +1,4 @@
-import { Bulkhead, BulkheadOptions, BulkheadRejectedError } from '../../src/core/_Bulkhead';
+import { Bulkhead, BulkheadOptions, BulkheadRejectedError } from '../../src/core/Bulkhead';
 
 describe('Bulkhead', () => {
     let bulkhead: Bulkhead;
