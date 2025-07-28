@@ -39,22 +39,29 @@ export class ErrorHandlerService {
             source: 'ErrorHandlerService'
         });
 
-        // Find and execute appropriate handlers
-        const appropriateHandlers = this.handlers.filter(h => h.canHandle(kernelError));
-
-        if (appropriateHandlers.length === 0) {
-            console.warn('No error handlers found for error:', kernelError);
-            return;
+        // Find the first handler that can handle the error
+        let handlerFound = false;
+        for (const handler of this.handlers) {
+            try {
+                if (handler.canHandle(kernelError)) {
+                    try {
+                        await handler.handleError(kernelError);
+                        handlerFound = true;
+                        break; // Stop at first successful handler
+                    } catch (handlerError) {
+                        console.error('Error handler failed:', handlerError);
+                        // Continue to next handler if this one fails
+                    }
+                }
+            } catch (canHandleError) {
+                console.error('canHandle method failed:', canHandleError);
+                // Continue to next handler if canHandle fails
+            }
         }
 
-        // Execute all appropriate handlers in parallel
-        await Promise.all(
-            appropriateHandlers.map(handler =>
-                handler.handleError(kernelError).catch(handlerError => {
-                    console.error('Error handler failed:', handlerError);
-                })
-            )
-        );
+        if (!handlerFound) {
+            console.warn('No error handlers found for error:', kernelError);
+        }
 
         // If error is critical, we might want to take additional actions
         if (kernelError.isCritical) {
