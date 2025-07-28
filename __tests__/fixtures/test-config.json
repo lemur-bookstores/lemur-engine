@@ -1,0 +1,42 @@
+{
+  "kernel": {
+    "name": "test-kernel",
+    "version": "1.0.0",
+    "environment": "test"
+  },
+  "logging": {
+    "level": "info",
+    "enabled": true
+  },
+  "plugins": {
+    "autoload": false,
+    "directory": "./plugins"
+  },
+  "resilience": {
+    "circuitBreaker": {
+      "enabled": true,
+      "threshold": 5,
+      "timeout": 60000
+    },
+    "retry": {
+      "enabled": true,
+      "maxAttempts": 3,
+      "delay": 1000
+    },
+    "bulkhead": {
+      "enabled": true,
+      "maxConcurrent": 10
+    }
+  },
+  "services": {
+    "eventBus": {
+      "enabled": true
+    },
+    "stateManager": {
+      "enabled": true
+    },
+    "errorHandler": {
+      "enabled": true
+    }
+  }
+}

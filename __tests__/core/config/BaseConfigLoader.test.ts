@@ -65,6 +65,19 @@ class TestConfigLoader extends BaseConfigLoader {
 
     // Método para testing
     public async testNotifyConfigChange(oldConfig: KernelConfig, newConfig: KernelConfig): Promise<void> {
+        // Primero notificar a los listeners locales
+        for (const listener of this.listeners) {
+            try {
+                if (listener.onConfigChange) {
+                    await listener.onConfigChange(oldConfig, newConfig);
+                }
+            } catch (error) {
+                console.error('Error in config change listener:', error);
+                // No relanzar el error para que otros listeners puedan ejecutarse
+            }
+        }
+
+        // Luego notificar a través del EventManager
         await this.notifyConfigChange(oldConfig, newConfig);
     }
 
@@ -87,6 +100,12 @@ describe('BaseConfigLoader', () => {
         mockListener2 = {
             onConfigChange: jest.fn().mockResolvedValue(undefined)
         };
+    });
+
+    afterEach(() => {
+        // Limpiar listeners para evitar memory leaks
+        configLoader.unsubscribe(mockListener1);
+        configLoader.unsubscribe(mockListener2);
     });
 
     describe('Observer Pattern', () => {

@@ -21,6 +21,11 @@ describe('ConfigEventManager', () => {
         } as KernelConfig;
     });
 
+    afterEach(() => {
+        // Asegurar limpieza completa después de cada test
+        eventManager.clearAllListeners();
+    });
+
     describe('Singleton Pattern', () => {
         it('should return the same instance', () => {
             const instance1 = ConfigEventManager.getInstance();
