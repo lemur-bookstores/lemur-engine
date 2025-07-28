@@ -30,7 +30,8 @@ export class Bulkhead {
     }> = [];
 
     constructor(private options: BulkheadOptions) {
-        this.options.timeout = options.timeout || 30000;
+        // Solo establecer timeout si se proporciona explícitamente
+        // No modificamos this.options.timeout aquí, mantenemos el valor original
     }
 
     /**
@@ -58,11 +59,17 @@ export class Bulkhead {
         this.executing.add(operationPromise);
 
         try {
-            // Aplicar timeout si está configurado
-            const result = await Promise.race([
-                operationPromise,
-                this.createTimeout()
-            ]);
+            let result: T;
+            
+            // Solo aplicar timeout si está configurado
+            if (this.options.timeout !== undefined) {
+                result = await Promise.race([
+                    operationPromise,
+                    this.createTimeout()
+                ]);
+            } else {
+                result = await operationPromise;
+            }
 
             this.executing.delete(operationPromise);
             this.processQueue();
@@ -80,7 +87,7 @@ export class Bulkhead {
      */
     private queueOperation<T>(operation: () => Promise<T>): Promise<T> {
         return new Promise((resolve, reject) => {
-            const timeoutId = this.options.timeout
+            const timeoutId = this.options.timeout !== undefined
                 ? setTimeout(() => {
                     const index = this.queue.findIndex(q => q.timeoutId === timeoutId);
                     if (index !== -1) {
@@ -116,12 +123,15 @@ export class Bulkhead {
      * Crea una promesa de timeout
      */
     private createTimeout(): Promise<never> {
+        if (this.options.timeout === undefined) {
+            // Si no hay timeout configurado, retornar una promesa que nunca se resuelve
+            return new Promise(() => {});
+        }
+        
         return new Promise((_, reject) => {
-            if (this.options.timeout) {
-                setTimeout(() => {
-                    reject(new Error('Operation timed out'));
-                }, this.options.timeout);
-            }
+            setTimeout(() => {
+                reject(new Error('Operation timed out'));
+            }, this.options.timeout);
         });
     }
 
