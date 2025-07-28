@@ -14,11 +14,13 @@ import {
     RunningState,
     MaintenanceState,
     InitializingState,
+    ShuttingDownState,
+    ErrorState,
     IKernelState
 } from './KernelState';
 import { ConfigurationManager } from './ConfigurationFlyweight';
 import { RetryHandler } from './RetryHandler';
-import { Bulkhead } from './_Bulkhead';
+import { Bulkhead } from './Bulkhead';
 import { PluginAutoloader } from './plugins/PluginAutoloader';
 import { defaultKernelConfig, KernelConfig } from './config/types';
 import { ConfigLoader } from './config/ConfigLoader';
@@ -71,10 +73,14 @@ export class Kernel {
         const initializingState = new InitializingState(null as any);
         const runningState = new RunningState(null as any);
         const maintenanceState = new MaintenanceState(null as any);
+        const shuttingDownState = new ShuttingDownState(null as any);
+        const errorState = new ErrorState(null as any);
         
         stateHandlers.set(KernelState.INITIALIZING, initializingState);
         stateHandlers.set(KernelState.RUNNING, runningState);
         stateHandlers.set(KernelState.MAINTENANCE, maintenanceState);
+        stateHandlers.set(KernelState.SHUTTING_DOWN, shuttingDownState);
+        stateHandlers.set(KernelState.ERROR, errorState);
 
         // Ahora crear el state manager real con los handlers
         this.stateManager = new KernelStateManager(stateHandlers);
@@ -83,6 +89,8 @@ export class Kernel {
         (initializingState as any).manager = this.stateManager;
         (runningState as any).manager = this.stateManager;
         (maintenanceState as any).manager = this.stateManager;
+        (shuttingDownState as any).manager = this.stateManager;
+        (errorState as any).manager = this.stateManager;
 
         // Inicializar patrones de resiliencia con configuración
         // this.retryHandler = new RetryHandler(this.config.retry); <- Corregir compatibilidad de interface
@@ -256,7 +264,7 @@ export class Kernel {
      */
     async initialize(): Promise<void> {
         if (this.isInitialized) {
-            return;
+            throw new Error('Kernel already initialized');
         }
 
         try {

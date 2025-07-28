@@ -22,10 +22,14 @@ export class ErrorHandlerService {
         // Convert to KernelError if it's not already one
         const kernelError = error instanceof KernelError
             ? error
-            : new KernelError(error.message, {
-                innerError: error,
-                sourceModule: 'unknown'
-            });
+            : new KernelError(
+                error.message,
+                'UNKNOWN_ERROR', // code
+                undefined,       // details
+                'unknown',       // sourceModule
+                false,           // isCritical
+                error            // innerError
+            );
 
         // Emit error event
         await this.eventBus.publish({
