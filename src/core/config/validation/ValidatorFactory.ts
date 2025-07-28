@@ -1,5 +1,5 @@
 import { RetryConfigValidator } from './RetryConfigValidator';
-import { BulkheadConfigValidator } from './_BulkheadConfigValidator';
+import { BulkheadConfigValidator } from './BulkheadConfigValidator';
 import { CircuitBreakerValidator } from './CircuitBreakerValidator';
 import { PluginConfigValidator } from './PluginConfigValidator';
 import { ValidationChain } from './ValidationChain';
