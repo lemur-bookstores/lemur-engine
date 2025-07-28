@@ -23,7 +23,7 @@ interface Plugin {
     name: string;
     version: string;
     dependencies?: string[];
-    initialize(kernel: Kernel): Promise<void>;
+    initialize(kernel: ExampleKernel): Promise<void>;
     shutdown(): Promise<void>;
     getEventHandlers(): EventHandler[];
 }
@@ -285,7 +285,7 @@ class ConfigManager {
 // MAIN KERNEL IMPLEMENTATION
 // ============================================================================
 
-class Kernel {
+class ExampleKernel {
     private eventBus: EventBus;
     private pluginRegistry: PluginRegistry;
     private serviceContainer: ServiceContainer;
@@ -419,7 +419,7 @@ class WebServerPlugin implements Plugin {
     version = '1.0.0';
     dependencies = ['logging', 'config'];
 
-    async initialize(kernel: Kernel): Promise<void> {
+    async initialize(kernel: ExampleKernel): Promise<void> {
         const config = kernel.getConfigManager().get<any>('webserver') || { port: 3000 };
         console.log(`Web server initializing on port ${config.port}`);
 
@@ -448,7 +448,7 @@ class WebServerPlugin implements Plugin {
 
 // Usage example
 async function main() {
-    const kernel = new Kernel();
+    const kernel = new ExampleKernel();
 
     // Register plugins
     kernel.registerPlugin(new WebServerPlugin());
@@ -467,4 +467,4 @@ async function main() {
     await kernel.shutdown();
 }
 
-export { Kernel, Plugin, EventHandler, KernelEvent };
+export { ExampleKernel, Plugin, EventHandler, KernelEvent };
