@@ -33,6 +33,13 @@ export class ConfigManager {
 
     private notifyWatchers(key: string, value: any): void {
         const callbacks = this.watchers.get(key) || [];
-        callbacks.forEach(callback => callback(value));
+        callbacks.forEach(callback => {
+            try {
+                callback(value);
+            } catch (error) {
+                // Silently handle callback errors to prevent interruption
+                console.error('Error in watcher callback:', error);
+            }
+        });
     }
 }

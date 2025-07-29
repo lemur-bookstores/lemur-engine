@@ -66,31 +66,22 @@ export class Kernel {
         this.mediator = new KernelMediator();
         this.configFlyweight = new ConfigurationManager();
 
-        // Crear state manager con handlers
-        const stateHandlers = new Map();
+        // Crear state manager
+        this.stateManager = new KernelStateManager();
         
-        // Configurar los estados (necesitamos una referencia temporal)
-        const initializingState = new InitializingState(null as any);
-        const runningState = new RunningState(null as any);
-        const maintenanceState = new MaintenanceState(null as any);
-        const shuttingDownState = new ShuttingDownState(null as any);
-        const errorState = new ErrorState(null as any);
+        // Configurar los estados
+        const initializingState = new InitializingState(this.stateManager);
+        const runningState = new RunningState(this.stateManager);
+        const maintenanceState = new MaintenanceState(this.stateManager);
+        const shuttingDownState = new ShuttingDownState(this.stateManager);
+        const errorState = new ErrorState(this.stateManager);
         
-        stateHandlers.set(KernelState.INITIALIZING, initializingState);
-        stateHandlers.set(KernelState.RUNNING, runningState);
-        stateHandlers.set(KernelState.MAINTENANCE, maintenanceState);
-        stateHandlers.set(KernelState.SHUTTING_DOWN, shuttingDownState);
-        stateHandlers.set(KernelState.ERROR, errorState);
-
-        // Ahora crear el state manager real con los handlers
-        this.stateManager = new KernelStateManager(stateHandlers);
-        
-        // Actualizar las referencias en los estados para que apunten al state manager real
-        (initializingState as any).manager = this.stateManager;
-        (runningState as any).manager = this.stateManager;
-        (maintenanceState as any).manager = this.stateManager;
-        (shuttingDownState as any).manager = this.stateManager;
-        (errorState as any).manager = this.stateManager;
+        // Registrar los estados
+        this.stateManager.registerState(KernelState.INITIALIZING, initializingState);
+        this.stateManager.registerState(KernelState.RUNNING, runningState);
+        this.stateManager.registerState(KernelState.MAINTENANCE, maintenanceState);
+        this.stateManager.registerState(KernelState.SHUTTING_DOWN, shuttingDownState);
+        this.stateManager.registerState(KernelState.ERROR, errorState);
 
         // Inicializar patrones de resiliencia con configuración
         // this.retryHandler = new RetryHandler(this.config.retry); <- Corregir compatibilidad de interface

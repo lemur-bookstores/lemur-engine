@@ -29,14 +29,20 @@ export class KernelStateManager {
     private stateHandlers: Map<KernelState | string, IKernelState>;
     private stateHistory: { state: KernelState; timestamp: Date }[] = [];
 
-    constructor(handlers: Map<KernelState, IKernelState>) {
-        this.stateHandlers = handlers;
-        // Establecer el estado inicial como INITIALIZING
-        const initializingHandler = handlers.get(KernelState.INITIALIZING);
-        if (!initializingHandler) {
-            throw new Error('No handler registered for INITIALIZING state');
-        }
-        this.currentState = initializingHandler;
+    constructor() {
+        this.stateHandlers = new Map<KernelState | string, IKernelState>();
+        this.currentStateEnum = KernelState.INITIALIZING;
+        this.currentState = {
+            initialize: async () => {},
+            shutdown: async () => {},
+            handleError: async () => {},
+            enterMaintenance: async () => {},
+            exitMaintenance: async () => {}
+        };
+        this.stateHistory.push({
+            state: KernelState.INITIALIZING,
+            timestamp: new Date()
+        });
     }
 
     async transitionTo(newState: KernelState): Promise<void> {
@@ -58,6 +64,10 @@ export class KernelStateManager {
 
     registerState(stateKey: string | KernelState, handler: IKernelState): void {
         this.stateHandlers.set(stateKey, handler);
+        // Si se registra el estado INITIALIZING, actualizamos el estado actual
+        if (stateKey === KernelState.INITIALIZING) {
+            this.currentState = handler;
+        }
     }
 
     getCurrentState(): IKernelState {
