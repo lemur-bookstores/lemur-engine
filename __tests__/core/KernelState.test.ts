@@ -78,7 +78,10 @@ describe('KernelState', () => {
                 [KernelState.SHUTTING_DOWN, mockShuttingDownState]
             ]);
 
-            stateManager = new KernelStateManager(handlers);
+            stateManager = new KernelStateManager();
+            handlers.forEach((handler, state) => {
+                stateManager.registerState(state, handler);
+            });
         });
 
         describe('constructor', () => {
@@ -92,13 +95,18 @@ describe('KernelState', () => {
                     [KernelState.RUNNING, mockRunningState]
                 ]);
 
-                expect(() => {
-                    new KernelStateManager(incompleteHandlers);
-                }).toThrow('No handler registered for INITIALIZING state');
+                const manager = new KernelStateManager();
+                incompleteHandlers.forEach((handler, state) => {
+                    manager.registerState(state, handler);
+                });
+                expect(manager.getCurrentStateEnum()).toBe(KernelState.INITIALIZING);
             });
 
-            it('should initialize state history with empty array', () => {
-                expect(stateManager.getStateHistory()).toEqual([]);
+            it('should initialize state history with INITIALIZING state', () => {
+                const history = stateManager.getStateHistory();
+                expect(history).toHaveLength(1);
+                expect(history[0].state).toBe(KernelState.INITIALIZING);
+                expect(history[0].timestamp).toBeInstanceOf(Date);
             });
         });
 
@@ -111,9 +119,8 @@ describe('KernelState', () => {
             });
 
             it('should throw error for unregistered state', async () => {
-                const incompleteManager = new KernelStateManager(new Map([
-                    [KernelState.INITIALIZING, mockInitializingState]
-                ]));
+                const incompleteManager = new KernelStateManager();
+                incompleteManager.registerState(KernelState.INITIALIZING, mockInitializingState);
 
                 await expect(incompleteManager.transitionTo(KernelState.RUNNING))
                     .rejects.toThrow('No handler registered for state: RUNNING');
@@ -126,13 +133,13 @@ describe('KernelState', () => {
                 await stateManager.transitionTo(KernelState.MAINTENANCE);
 
                 const history = stateManager.getStateHistory();
-                expect(history).toHaveLength(2);
+                expect(history).toHaveLength(3); // Including INITIALIZING state
                 
-                expect(history[0].state).toBe(KernelState.RUNNING);
-                expect(history[0].timestamp.getTime()).toBeGreaterThanOrEqual(beforeTransition);
-                
-                expect(history[1].state).toBe(KernelState.MAINTENANCE);
+                expect(history[1].state).toBe(KernelState.RUNNING);
                 expect(history[1].timestamp.getTime()).toBeGreaterThanOrEqual(beforeTransition);
+                
+                expect(history[2].state).toBe(KernelState.MAINTENANCE);
+                expect(history[2].timestamp.getTime()).toBeGreaterThanOrEqual(beforeTransition);
             });
 
             it('should handle multiple transitions correctly', async () => {
@@ -142,7 +149,7 @@ describe('KernelState', () => {
 
                 expect(stateManager.getCurrentStateEnum()).toBe(KernelState.ERROR);
                 expect(stateManager.getCurrentState()).toBe(mockErrorState);
-                expect(stateManager.getStateHistory()).toHaveLength(3);
+                expect(stateManager.getStateHistory()).toHaveLength(4); // Including INITIALIZING state
             });
         });
 
@@ -201,11 +208,11 @@ describe('KernelState', () => {
 
             it('should preserve chronological order', async () => {
                 await stateManager.transitionTo(KernelState.RUNNING);
-                await new Promise(resolve => setTimeout(resolve, 1)); // Ensure different timestamps
+                await new Promise(resolve => setTimeout(resolve, 100)); // Increased delay to ensure different timestamps
                 await stateManager.transitionTo(KernelState.MAINTENANCE);
                 
                 const history = stateManager.getStateHistory();
-                expect(history[0].timestamp.getTime()).toBeLessThan(history[1].timestamp.getTime());
+                expect(history[1].timestamp.getTime()).toBeLessThan(history[2].timestamp.getTime()); // Compare RUNNING and MAINTENANCE timestamps
             });
         });
 
@@ -246,23 +253,17 @@ describe('KernelState', () => {
         let initializingState: InitializingState;
 
         beforeEach(() => {
-            // Create mock states first
+            // Create mock states
             const mockRunning = new MockKernelState();
             const mockError = new MockKernelState();
             
-            const handlers = new Map<KernelState, IKernelState>();
-            
-            // Create a temporary initializing state for manager creation
-            const tempInitializing = new MockKernelState();
-            handlers.set(KernelState.INITIALIZING, tempInitializing);
-            
-            stateManager = new KernelStateManager(handlers);
+            stateManager = new KernelStateManager();
             initializingState = new InitializingState(stateManager);
             
-            // Now set the proper handlers
-            handlers.set(KernelState.INITIALIZING, initializingState);
-            handlers.set(KernelState.RUNNING, mockRunning);
-            handlers.set(KernelState.ERROR, mockError);
+            // Register all state handlers
+            stateManager.registerState(KernelState.INITIALIZING, initializingState);
+            stateManager.registerState(KernelState.RUNNING, mockRunning);
+            stateManager.registerState(KernelState.ERROR, mockError);
         });
 
         describe('initialize', () => {
@@ -319,18 +320,15 @@ describe('KernelState', () => {
             const mockError = new MockKernelState();
             const mockMaintenance = new MockKernelState();
             
-            const handlers = new Map<KernelState, IKernelState>([
-                [KernelState.INITIALIZING, mockInitializing]
-            ]);
-            
-            stateManager = new KernelStateManager(handlers);
+            stateManager = new KernelStateManager();
             runningState = new RunningState(stateManager);
             
-            // Now add the rest of the handlers
-            handlers.set(KernelState.RUNNING, runningState);
-            handlers.set(KernelState.SHUTTING_DOWN, mockShuttingDown);
-            handlers.set(KernelState.ERROR, mockError);
-            handlers.set(KernelState.MAINTENANCE, mockMaintenance);
+            // Register all state handlers
+            stateManager.registerState(KernelState.INITIALIZING, mockInitializing);
+            stateManager.registerState(KernelState.RUNNING, runningState);
+            stateManager.registerState(KernelState.SHUTTING_DOWN, mockShuttingDown);
+            stateManager.registerState(KernelState.ERROR, mockError);
+            stateManager.registerState(KernelState.MAINTENANCE, mockMaintenance);
         });
 
         describe('initialize', () => {
@@ -398,17 +396,14 @@ describe('KernelState', () => {
             const mockRunning = new MockKernelState();
             const mockShuttingDown = new MockKernelState();
             
-            const handlers = new Map<KernelState, IKernelState>([
-                [KernelState.INITIALIZING, mockInitializing]
-            ]);
-            
-            stateManager = new KernelStateManager(handlers);
+            stateManager = new KernelStateManager();
             maintenanceState = new MaintenanceState(stateManager);
             
-            // Now add the rest of the handlers
-            handlers.set(KernelState.RUNNING, mockRunning);
-            handlers.set(KernelState.SHUTTING_DOWN, mockShuttingDown);
-            handlers.set(KernelState.MAINTENANCE, maintenanceState);
+            // Register all handlers
+            stateManager.registerState(KernelState.INITIALIZING, mockInitializing);
+            stateManager.registerState(KernelState.RUNNING, mockRunning);
+            stateManager.registerState(KernelState.SHUTTING_DOWN, mockShuttingDown);
+            stateManager.registerState(KernelState.MAINTENANCE, maintenanceState);
             
             // Mock console.warn to avoid noise in tests
             jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -469,14 +464,8 @@ describe('KernelState', () => {
         let stateManager: KernelStateManager;
 
         beforeEach(() => {
-            // Create a temporary initializing state for manager creation
-            const tempInitializing = new MockKernelState();
-            
-            const handlers = new Map<KernelState, IKernelState>([
-                [KernelState.INITIALIZING, tempInitializing]
-            ]);
-            
-            stateManager = new KernelStateManager(handlers);
+            // Create the state manager
+            stateManager = new KernelStateManager();
             
             // Create proper handlers with the manager
             const initializingState = new InitializingState(stateManager);
@@ -485,12 +474,12 @@ describe('KernelState', () => {
             const errorState = new MockKernelState(stateManager);
             const shuttingDownState = new MockKernelState(stateManager);
             
-            // Update handlers
-            handlers.set(KernelState.INITIALIZING, initializingState);
-            handlers.set(KernelState.RUNNING, runningState);
-            handlers.set(KernelState.MAINTENANCE, maintenanceState);
-            handlers.set(KernelState.ERROR, errorState);
-            handlers.set(KernelState.SHUTTING_DOWN, shuttingDownState);
+            // Register all handlers
+            stateManager.registerState(KernelState.INITIALIZING, initializingState);
+            stateManager.registerState(KernelState.RUNNING, runningState);
+            stateManager.registerState(KernelState.MAINTENANCE, maintenanceState);
+            stateManager.registerState(KernelState.ERROR, errorState);
+            stateManager.registerState(KernelState.SHUTTING_DOWN, shuttingDownState);
         });
 
         it('should handle complete initialization flow', async () => {
@@ -529,8 +518,9 @@ describe('KernelState', () => {
             await stateManager.getCurrentState().shutdown();
             
             const history = stateManager.getStateHistory();
-            expect(history).toHaveLength(4);
+            expect(history).toHaveLength(5);
             expect(history.map(h => h.state)).toEqual([
+                KernelState.INITIALIZING,
                 KernelState.RUNNING,
                 KernelState.MAINTENANCE,
                 KernelState.RUNNING,

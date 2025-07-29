@@ -32,9 +32,8 @@ describe('KernelBootstrap', () => {
         mockServiceContainer = new ServiceContainer() as jest.Mocked<ServiceContainer>;
         mockEventBus = new EventBus() as jest.Mocked<EventBus>;
         
-        // Create a mock handlers map for KernelStateManager
-        const mockHandlers = new Map();
-        mockStateManager = new KernelStateManager(mockHandlers) as jest.Mocked<KernelStateManager>;
+        // Create mock state manager instance
+        mockStateManager = new KernelStateManager() as jest.Mocked<KernelStateManager>;
         
         mockErrorHandler = new ErrorHandlerService(mockEventBus) as jest.Mocked<ErrorHandlerService>;
         mockPluginRegistry = new PluginRegistry() as jest.Mocked<PluginRegistry>;

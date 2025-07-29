@@ -94,7 +94,8 @@ describe('KernelMediator', () => {
             const secondId = dynamicComponent.getId();
 
             expect(firstId).not.toBe(secondId);
-            expect(dynamicComponent.getId).toHaveBeenCalledTimes(2);
+            // getId se llama dos veces durante el registro (una por cada register) y dos veces más al obtener firstId y secondId
+            expect(dynamicComponent.getId).toHaveBeenCalledTimes(4);
         });
     });
 
