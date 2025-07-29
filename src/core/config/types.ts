@@ -126,7 +126,7 @@ export const defaultKernelConfig: KernelConfig = {
     },
     circuitBreaker: {
         enabled: true,
-        failureThreshold: 5,
+        failureThreshold: 4,
         resetTimeout: 60000,
         halfOpenSuccessThreshold: 3,
         monitoringPeriod: 10000

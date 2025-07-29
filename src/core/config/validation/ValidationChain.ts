@@ -39,7 +39,7 @@ export class ValidationChain {
 
         while (current) {
             validators.push(current.getValidatorName());
-            current = current.validate as any as ConfigValidator;
+            current = current.getNextValidator();
         }
 
         return validators;

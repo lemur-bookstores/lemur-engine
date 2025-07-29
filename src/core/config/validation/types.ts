@@ -17,6 +17,7 @@ export interface ConfigValidator {
     validate(config: KernelConfig): ValidationResult;
     getValidatorName(): string;
     setNextValidator(validator: ConfigValidator): ConfigValidator;
+    getNextValidator(): ConfigValidator | null;
 }
 
 export interface ValidationContext {

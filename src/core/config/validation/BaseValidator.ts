@@ -36,6 +36,10 @@ export abstract class BaseValidator implements ConfigValidator {
         return this.validatorName;
     }
 
+    public getNextValidator(): ConfigValidator | null {
+        return this.nextValidator;
+    }
+
     protected addError(context: ValidationContext, error: Partial<ValidationError>): void {
         context.errors.push({
             code: error.code || 'VALIDATION_ERROR',
@@ -50,16 +54,19 @@ export abstract class BaseValidator implements ConfigValidator {
         context: ValidationContext,
         fieldPath: string[],
         validator: (value: T) => boolean,
-        error: Partial<ValidationError>
+        error: Partial<ValidationError>,
+        isOptional: boolean = false
     ): void {
         let current: any = context.config;
         for (const field of fieldPath) {
-            if (current === undefined || current === null) {
-                this.addError(context, {
-                    code: 'FIELD_NOT_FOUND',
-                    message: `Field ${fieldPath.join('.')} not found`,
-                    path: fieldPath
-                });
+            if (!(field in current)) {
+                if (!isOptional) {
+                    this.addError(context, {
+                        code: 'FIELD_NOT_FOUND',
+                        message: `Field ${fieldPath.join('.')} not found`,
+                        path: fieldPath
+                    });
+                }
                 return;
             }
             current = current[field];

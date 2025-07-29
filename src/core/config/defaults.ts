@@ -28,7 +28,7 @@ export const DEFAULT_BULKHEAD_CONFIG: BulkheadConfig = {
 
 export const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
     enabled: true,
-    failureThreshold: 0.5,
+    failureThreshold: 5, // Number of consecutive failures before opening the circuit
     resetTimeout: 30000,
     halfOpenSuccessThreshold: 5,
     monitoringPeriod: 60000,
@@ -53,16 +53,29 @@ export const DEFAULT_KERNEL_CONFIG: KernelConfig = {
     retry: DEFAULT_RETRY_CONFIG,
     bulkhead: DEFAULT_BULKHEAD_CONFIG,
     circuitBreaker: DEFAULT_CIRCUIT_BREAKER_CONFIG,
-    plugins: [],
+    plugins: [{
+        name: 'default',
+        version: '1.0.0',
+        enabled: true,
+        dependencies: [],
+        config: {}
+    }],
     pluginConfig: DEFAULT_PLUGIN_CONFIG,
     errorHandler: {
         console: {
-            enabled: false
+            enabled: false,
+            level: 'error'
         },
         file: {
             enabled: false,
-            path: ''
+            path: '',
+            maxSize: '10mb',
+            maxFiles: 5
         }
     },
-    logging: {}
+    logging: {
+        level: 'info',
+        format: 'text',
+        destination: 'console'
+    }
 };
