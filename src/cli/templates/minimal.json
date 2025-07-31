@@ -1,0 +1,67 @@
+{
+  "name": "minimal",
+  "description": "Plantilla minimalista para plugins de Lemur Engine",
+  "files": [
+    {
+      "path": "src/index.ts",
+      "content": "import { Plugin, PluginContext } from '@lemur-engine/core';
+
+export default class {{name}}Plugin implements Plugin {
+  constructor(private context: PluginContext) {}
+
+  async initialize(): Promise<void> {
+    this.context.logger.info('{{name}} plugin inicializado');
+  }
+
+  async start(): Promise<void> {}
+
+  async stop(): Promise<void> {}
+}
+"
+    },
+    {
+      "path": "__tests__/index.test.ts",
+      "content": "import { createMockPluginContext } from '@lemur-engine/testing';
+import {{name}}Plugin from '../src';
+
+describe('{{name}}Plugin', () => {
+  it('debería inicializarse correctamente', async () => {
+    const context = createMockPluginContext();
+    const plugin = new {{name}}Plugin(context);
+    await plugin.initialize();
+    expect(context.logger.info).toHaveBeenCalledWith('{{name}} plugin inicializado');
+  });
+});
+"
+    },
+    {
+      "path": "README.md",
+      "content": "# {{name}} Plugin
+
+{{description}}
+
+## Instalación
+
+```bash
+npm install {{name}}
+```
+
+## Uso
+
+```typescript
+import {{name}}Plugin from '{{name}}';
+
+// Configura el plugin en tu kernel.config.json
+{
+  \"plugins\": [
+    {
+      \"name\": \"{{name}}\",
+      \"enabled\": true
+    }
+  ]
+}
+```
+"
+    }
+  ]
+}

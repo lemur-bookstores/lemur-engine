@@ -1,0 +1,37 @@
+[
+  {
+    "timestamp": 1753856815955,
+    "cpu": {
+      "usage": 17.2,
+      "load": [
+        0,
+        0,
+        0
+      ]
+    },
+    "memory": {
+      "total": 17130668032,
+      "used": 8599502848,
+      "free": 8531165184,
+      "usage": 50.2
+    },
+    "disk": {
+      "total": 238927400960,
+      "used": 166677491712,
+      "free": 72249909248,
+      "usage": 69.76
+    },
+    "network": {
+      "bytesIn": 0,
+      "bytesOut": 0,
+      "packetsIn": 0,
+      "packetsOut": 0
+    },
+    "process": {
+      "pid": 11160,
+      "uptime": 285,
+      "memory": 144.78,
+      "cpu": 0
+    }
+  }
+]
