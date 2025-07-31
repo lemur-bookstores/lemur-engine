@@ -1,34 +1,60 @@
-"""
-Multi-Protocol Communication (MPC) System
+"""Sistema MPC (Multi-Protocol Communication)
 =========================================
 
-Sistema de comunicación multi-protocolo que soporta:
-- HTTP/HTTPS
-- WebSocket
-- gRPC
-- MCP (Model Context Protocol)
+Sistema unificado de comunicación multi-protocolo que soporta:
+- HTTP/HTTPS (REST API)
+- WebSocket (Comunicación bidireccional en tiempo real)
+- gRPC (Comunicación de alto rendimiento) - Próximamente
+- MCP (Model Context Protocol) - Próximamente
 
-Arquitectura basada en adaptadores con un router central unificado.
+Versión: 2.0.0 (Fase 2 - WebSocket Integration)
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __author__ = "Lemur Engine Team"
+__description__ = "Multi-Protocol Communication System"
 
+# Core interfaces and classes
 from .core.interfaces import (
     ProtocolAdapter,
     MessageRouter,
     ConnectionManager,
-    Message
+    Message,
+    ProtocolType,
+    MessageType,
+    EventHandler
 )
 
-from .core.gateway import UnifiedGateway
+# Core implementations
 from .core.router import MPCRouter
+from .core.gateway import UnifiedGateway
+from .core.connection_manager import MPCConnectionManager
+
+# Protocol adapters
+from .adapters.http_adapter import HTTPAdapter
+from .adapters.websocket_adapter import WebSocketAdapter
 
 __all__ = [
-    "ProtocolAdapter",
-    "MessageRouter", 
-    "ConnectionManager",
-    "Message",
-    "UnifiedGateway",
-    "MPCRouter"
+    # Core interfaces
+    'ProtocolAdapter',
+    'MessageRouter', 
+    'ConnectionManager',
+    'Message',
+    'ProtocolType',
+    'MessageType',
+    'EventHandler',
+    
+    # Core implementations
+    'MPCRouter',
+    'UnifiedGateway',
+    'MPCConnectionManager',
+    
+    # Protocol adapters
+    'HTTPAdapter',
+    'WebSocketAdapter',
+    
+    # Metadata
+    '__version__',
+    '__author__',
+    '__description__'
 ]
