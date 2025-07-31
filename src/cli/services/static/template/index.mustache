@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoreo - Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🖥️ Monitor del Sistema ({{updateInterval}}ms)</h1>
+            <p>Monitoreo en tiempo real de recursos del sistema</p>
+            <p><small>Última actualización: <span id="lastUpdate">--</span></small></p>
+        </header>
+
+        <div class="metrics-grid">
+            {{#metrics}}
+            <div class="metric-card" data-metric="{{id}}">
+                <div class="metric-header">
+                    <h3 class="metric-title">
+                        <span class="status-indicator status-good"></span>
+                        {{title}}
+                    </h3>
+                </div>
+                <div class="metric-value">
+                    <span class="value">--</span>
+                    <span class="metric-unit">{{unit}}</span>
+                </div>
+                <div class="metric-details">
+                    <small class="metric-info">Cargando...</small>
+                </div>
+            </div>
+            {{/metrics}}
+        </div>
+
+        <div class="chart-container">
+            <h2 class="chart-title">📊 Histórico de Rendimiento</h2>
+            <div id="chartContainer">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="system-info">
+            <div class="info-card">
+                <h3>ℹ️ Información del Sistema</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Plataforma:</span>
+                        <span class="info-value" id="platform">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Uptime:</span>
+                        <span class="info-value" id="uptime">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Proceso PID:</span>
+                        <span class="info-value" id="pid">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Memoria Proceso:</span>
+                        <span class="info-value" id="processMemory">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/chart.min.js"></script>
+    <script src="/static/js/metrics.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+
+    <script>
+        // Configuración inicial desde el servidor
+        window.dashboardConfig = {
+            updateInterval: {{updateInterval}} || 2000
+        };
+    </script>
+</body>
+</html>

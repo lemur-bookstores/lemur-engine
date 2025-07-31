@@ -2,14 +2,19 @@ import { BaseValidator } from './BaseValidator';
 import { ValidationContext } from './types';
 
 export class BulkheadConfigValidator extends BaseValidator {
-    protected validatorName = 'BulkheadConfigValidator';
+    protected validatorName = 'bulkhead-config-validator';
 
     protected doValidate(context: ValidationContext): void {
-        const bulkheadConfig = context.config.bulkhead;
-
-        if (!bulkheadConfig) {
-            return; // La configuración de bulkhead es opcional
-        }
+        this.validateField(
+            context,
+            ['bulkhead'],
+            (value: any) => typeof value === 'object' || value === undefined,
+            {
+                code: 'INVALID_BULKHEAD_CONFIG',
+                message: 'bulkhead configuration must be an object'
+            },
+            true // bulkhead es opcional
+        );
 
         this.validateField(
             context,
@@ -18,7 +23,8 @@ export class BulkheadConfigValidator extends BaseValidator {
             {
                 code: 'INVALID_MAX_CONCURRENT',
                 message: 'maxConcurrent must be a positive number'
-            }
+            },
+            true
         );
 
         this.validateField(
@@ -28,7 +34,8 @@ export class BulkheadConfigValidator extends BaseValidator {
             {
                 code: 'INVALID_MAX_QUEUE_SIZE',
                 message: 'maxQueueSize must be a non-negative number'
-            }
+            },
+            true
         );
 
         this.validateField(
@@ -38,7 +45,8 @@ export class BulkheadConfigValidator extends BaseValidator {
             {
                 code: 'INVALID_QUEUE_TIMEOUT',
                 message: 'queueTimeout must be a non-negative number'
-            }
+            },
+            true
         );
     }
 }

@@ -34,8 +34,13 @@ export class RetryHandler {
      * Ejecuta una operación con reintentos
      */
     async execute<T>(operation: () => Promise<T>): Promise<T> {
+        // Si maxAttempts es 0, fallar inmediatamente
+        if (this.options.maxAttempts <= 0) {
+            throw new Error(`Operation failed after 0 attempts. Last error: undefined`);
+        }
+
         let attempt = 1;
-        let lastError: Error = {} as Error; // Inicializar lastError para evitar errores de referencia antes de la primera asignación
+        let lastError: any = new Error('No error'); // Inicializar lastError
         const startTime = Date.now();
 
         while (attempt <= this.options.maxAttempts) {
@@ -66,7 +71,8 @@ export class RetryHandler {
             }
         }
 
-        throw new Error(`Operation failed after ${attempt} attempts. Last error: ${lastError?.message}`);
+        const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+        throw new Error(`Operation failed after ${attempt} attempts. Last error: ${errorMessage}`);
     }
 
     /**
@@ -88,7 +94,12 @@ export class RetryHandler {
     /**
      * Verifica si un error es retriable según la configuración
      */
-    private isRetryableError(error: Error): boolean {
+    private isRetryableError(error: any): boolean {
+        // Si no es un objeto Error, no es retriable
+        if (!(error instanceof Error)) {
+            return false;
+        }
+
         if (!this.options.retryableErrors || this.options.retryableErrors.length === 0) {
             return true;
         }

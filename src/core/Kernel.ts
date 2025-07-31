@@ -14,6 +14,8 @@ import {
     RunningState,
     MaintenanceState,
     InitializingState,
+    ShuttingDownState,
+    ErrorState,
     IKernelState
 } from './KernelState';
 import { ConfigurationManager } from './ConfigurationFlyweight';
@@ -64,22 +66,22 @@ export class Kernel {
         this.mediator = new KernelMediator();
         this.configFlyweight = new ConfigurationManager();
 
-        // Crear state manager con handlers
-        const stateHandlers = new Map();
-        // Crear un KernelStateManager temporal para inicializar los estados
-        const tempStateManager = {
-            transitionTo: async () => { },
-            getCurrentState: () => KernelState.INITIALIZING,
-            getStateHistory: () => []
-        } as any;
-
+        // Crear state manager
+        this.stateManager = new KernelStateManager();
+        
         // Configurar los estados
-        stateHandlers.set(KernelState.INITIALIZING, new InitializingState(tempStateManager));
-        stateHandlers.set(KernelState.RUNNING, new RunningState(tempStateManager));
-        stateHandlers.set(KernelState.MAINTENANCE, new MaintenanceState(tempStateManager));
-
-        // Ahora crear el state manager real con los handlers
-        this.stateManager = new KernelStateManager(stateHandlers);
+        const initializingState = new InitializingState(this.stateManager);
+        const runningState = new RunningState(this.stateManager);
+        const maintenanceState = new MaintenanceState(this.stateManager);
+        const shuttingDownState = new ShuttingDownState(this.stateManager);
+        const errorState = new ErrorState(this.stateManager);
+        
+        // Registrar los estados
+        this.stateManager.registerState(KernelState.INITIALIZING, initializingState);
+        this.stateManager.registerState(KernelState.RUNNING, runningState);
+        this.stateManager.registerState(KernelState.MAINTENANCE, maintenanceState);
+        this.stateManager.registerState(KernelState.SHUTTING_DOWN, shuttingDownState);
+        this.stateManager.registerState(KernelState.ERROR, errorState);
 
         // Inicializar patrones de resiliencia con configuración
         // this.retryHandler = new RetryHandler(this.config.retry); <- Corregir compatibilidad de interface
@@ -304,8 +306,7 @@ export class Kernel {
                 }
             }
 
-            this.isInitialized = true;
-
+            // Publicar evento de inicialización completada
             await this.eventBus.publish({
                 id: crypto.randomUUID(),
                 type: 'kernel.initialized',
@@ -313,6 +314,11 @@ export class Kernel {
                 timestamp: new Date(),
                 source: 'Kernel'
             });
+
+            this.isInitialized = true;
+
+            // Cambiar estado a RUNNING
+            await this.stateManager.getCurrentState().initialize();
 
         } catch (error: any) {
             await this.eventBus.publish({
@@ -322,12 +328,16 @@ export class Kernel {
                 timestamp: new Date(),
                 source: 'Kernel'
             });
+            await this.errorHandler.handleError(error as Error);
             throw error;
         }
     }
 
     async shutdown(): Promise<void> {
         if (!this.isInitialized) return;
+
+        // Cambiar el estado del kernel a SHUTTING_DOWN
+        await this.stateManager.getCurrentState().shutdown();
 
         const shutdownOrder = this.pluginRegistry.getInitializationOrder().reverse();
 

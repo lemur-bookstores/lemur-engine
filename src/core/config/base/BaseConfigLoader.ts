@@ -105,6 +105,7 @@ export abstract class BaseConfigLoader implements IConfigLoader {
                 }
             } catch (error) {
                 console.error('Error in config change listener:', error);
+                // No relanzar el error para que otros listeners puedan ejecutarse
             }
         }
 

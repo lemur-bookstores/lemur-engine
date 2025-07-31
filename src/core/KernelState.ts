@@ -29,14 +29,20 @@ export class KernelStateManager {
     private stateHandlers: Map<KernelState | string, IKernelState>;
     private stateHistory: { state: KernelState; timestamp: Date }[] = [];
 
-    constructor(handlers: Map<KernelState, IKernelState>) {
-        this.stateHandlers = handlers;
-        // Establecer el estado inicial como INITIALIZING
-        const initializingHandler = handlers.get(KernelState.INITIALIZING);
-        if (!initializingHandler) {
-            throw new Error('No handler registered for INITIALIZING state');
-        }
-        this.currentState = initializingHandler;
+    constructor() {
+        this.stateHandlers = new Map<KernelState | string, IKernelState>();
+        this.currentStateEnum = KernelState.INITIALIZING;
+        this.currentState = {
+            initialize: async () => {},
+            shutdown: async () => {},
+            handleError: async () => {},
+            enterMaintenance: async () => {},
+            exitMaintenance: async () => {}
+        };
+        this.stateHistory.push({
+            state: KernelState.INITIALIZING,
+            timestamp: new Date()
+        });
     }
 
     async transitionTo(newState: KernelState): Promise<void> {
@@ -58,6 +64,10 @@ export class KernelStateManager {
 
     registerState(stateKey: string | KernelState, handler: IKernelState): void {
         this.stateHandlers.set(stateKey, handler);
+        // Si se registra el estado INITIALIZING, actualizamos el estado actual
+        if (stateKey === KernelState.INITIALIZING) {
+            this.currentState = handler;
+        }
     }
 
     getCurrentState(): IKernelState {
@@ -166,5 +176,59 @@ export class MaintenanceState extends BaseKernelState {
 
     async exitMaintenance(): Promise<void> {
         await this.manager.transitionTo(KernelState.RUNNING);
+    }
+}
+
+/**
+ * Estado: Kernel cerrándose
+ */
+export class ShuttingDownState extends BaseKernelState {
+    async initialize(): Promise<void> {
+        throw new Error('Cannot initialize: Kernel is shutting down');
+    }
+
+    async shutdown(): Promise<void> {
+        // Ya estamos en proceso de cierre, no hacer nada
+        console.log('Kernel is already shutting down');
+    }
+
+    async handleError(error: Error): Promise<void> {
+        // Durante el cierre, los errores se registran pero no cambian el estado
+        console.error('Error during shutdown:', error);
+    }
+
+    async enterMaintenance(): Promise<void> {
+        throw new Error('Cannot enter maintenance: Kernel is shutting down');
+    }
+
+    async exitMaintenance(): Promise<void> {
+        throw new Error('Cannot exit maintenance: Kernel is shutting down');
+    }
+}
+
+/**
+ * Estado: Kernel en error
+ */
+export class ErrorState extends BaseKernelState {
+    async initialize(): Promise<void> {
+        throw new Error('Cannot initialize: Kernel is in error state');
+    }
+
+    async shutdown(): Promise<void> {
+        await this.manager.transitionTo(KernelState.SHUTTING_DOWN);
+    }
+
+    async handleError(error: Error): Promise<void> {
+        // Ya estamos en estado de error, solo registrar el nuevo error
+        console.error('Additional error while in error state:', error);
+    }
+
+    async enterMaintenance(): Promise<void> {
+        // Desde error, podemos intentar ir a mantenimiento para recuperación
+        await this.manager.transitionTo(KernelState.MAINTENANCE);
+    }
+
+    async exitMaintenance(): Promise<void> {
+        throw new Error('Cannot exit maintenance: Kernel is in error state');
     }
 }

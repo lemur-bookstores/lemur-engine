@@ -11,31 +11,37 @@ export class HealthMonitor {
         this.healthChecks.set(name, check);
     }
 
-    start(): void {
+    async start(): Promise<void> {
         if (this.checkInterval) return;
 
-        this.checkInterval = setInterval(() => {
-            this.runHealthChecks();
+        // Run initial health check
+        await this.runHealthChecks();
+
+        this.checkInterval = setInterval(async () => {
+            await this.runHealthChecks();
         }, this.intervalMs);
     }
 
-    stop(): void {
+    async stop(): Promise<void> {
         if (this.checkInterval) {
             clearInterval(this.checkInterval);
             this.checkInterval = null;
+            // Ensure any pending health checks complete
+            await Promise.resolve();
         }
     }
 
     private async runHealthChecks(): Promise<void> {
-        for (const [name, check] of this.healthChecks) {
+        const checks = Array.from(this.healthChecks.entries());
+        await Promise.all(checks.map(async ([name, check]) => {
             try {
-                const isHealthy = await check();
-                this.lastCheckResults.set(name, isHealthy);
+                const isHealthy = await Promise.resolve(check());
+                this.lastCheckResults.set(name, Boolean(isHealthy));
             } catch (error) {
                 this.lastCheckResults.set(name, false);
                 console.error(`Health check failed for ${name}:`, error);
             }
-        }
+        }));
     }
 
     getStatus(): Map<string, boolean> {

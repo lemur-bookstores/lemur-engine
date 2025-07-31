@@ -1,0 +1,334 @@
+{
+  "name": "full",
+  "description": "Plantilla completa con todas las funcionalidades para plugins de Lemur Engine",
+  "files": [
+    {
+      "path": "src/index.ts",
+      "content": "import { Plugin, PluginContext, PluginConfig } from '@lemur-engine/core';
+import { {{name}}Service } from './services/{{name}}Service';
+import { {{name}}Controller } from './controllers/{{name}}Controller';
+import { {{name}}Repository } from './repositories/{{name}}Repository';
+import { {{name}}Config } from './types';
+
+export default class {{name}}Plugin implements Plugin {
+  private service: {{name}}Service;
+  private config: {{name}}Config;
+
+  constructor(private context: PluginContext) {}
+
+  async initialize(): Promise<void> {
+    // Cargar configuración
+    this.config = this.context.config.get('{{name}}') as {{name}}Config;
+
+    // Registrar dependencias
+    this.context.container.register('{{name}}Repository', {{name}}Repository);
+    this.context.container.register('{{name}}Service', {{name}}Service);
+    this.context.container.register('{{name}}Controller', {{name}}Controller);
+
+    // Inicializar servicios
+    this.service = this.context.container.resolve('{{name}}Service');
+
+    this.context.logger.info('{{name}} plugin inicializado');
+  }
+
+  async start(): Promise<void> {
+    // Registrar rutas y eventos
+    const controller = this.context.container.resolve('{{name}}Controller');
+    controller.registerRoutes();
+
+    // Suscribirse a eventos
+    this.context.events.on('system.ready', () => {
+      this.context.logger.info('Sistema listo, iniciando {{name}} plugin');
+    });
+
+    // Iniciar servicios
+    await this.service.start();
+
+    this.context.logger.info('{{name}} plugin iniciado');
+  }
+
+  async stop(): Promise<void> {
+    // Detener servicios
+    await this.service.stop();
+
+    // Limpiar recursos
+    this.context.events.removeAllListeners();
+
+    this.context.logger.info('{{name}} plugin detenido');
+  }
+}
+"
+    },
+    {
+      "path": "src/services/{{name}}Service.ts",
+      "content": "import { Injectable } from '@lemur-engine/core';
+import { {{name}}Repository } from '../repositories/{{name}}Repository';
+import { {{name}}Data } from '../types';
+
+@Injectable()
+export class {{name}}Service {
+  constructor(private repository: {{name}}Repository) {}
+
+  async start(): Promise<void> {
+    // Inicialización del servicio
+  }
+
+  async stop(): Promise<void> {
+    // Limpieza del servicio
+  }
+
+  async getData(): Promise<{{name}}Data[]> {
+    return this.repository.findAll();
+  }
+
+  async createData(data: {{name}}Data): Promise<{{name}}Data> {
+    return this.repository.create(data);
+  }
+
+  async updateData(id: string, data: Partial<{{name}}Data>): Promise<{{name}}Data> {
+    return this.repository.update(id, data);
+  }
+
+  async deleteData(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
+}
+"
+    },
+    {
+      "path": "src/controllers/{{name}}Controller.ts",
+      "content": "import { Controller, Get, Post, Put, Delete } from '@lemur-engine/core';
+import { {{name}}Service } from '../services/{{name}}Service';
+import { {{name}}Data } from '../types';
+
+@Controller('/api/{{name}}')
+export class {{name}}Controller {
+  constructor(private service: {{name}}Service) {}
+
+  @Get('/')
+  async getAll(): Promise<{{name}}Data[]> {
+    return this.service.getData();
+  }
+
+  @Post('/')
+  async create(data: {{name}}Data): Promise<{{name}}Data> {
+    return this.service.createData(data);
+  }
+
+  @Put('/:id')
+  async update(id: string, data: Partial<{{name}}Data>): Promise<{{name}}Data> {
+    return this.service.updateData(id, data);
+  }
+
+  @Delete('/:id')
+  async delete(id: string): Promise<void> {
+    await this.service.deleteData(id);
+  }
+
+  registerRoutes(): void {
+    // Las rutas se registran automáticamente gracias a los decoradores
+  }
+}
+"
+    },
+    {
+      "path": "src/repositories/{{name}}Repository.ts",
+      "content": "import { Injectable } from '@lemur-engine/core';
+import { {{name}}Data } from '../types';
+
+@Injectable()
+export class {{name}}Repository {
+  private data: Map<string, {{name}}Data> = new Map();
+
+  async findAll(): Promise<{{name}}Data[]> {
+    return Array.from(this.data.values());
+  }
+
+  async findById(id: string): Promise<{{name}}Data | undefined> {
+    return this.data.get(id);
+  }
+
+  async create(data: {{name}}Data): Promise<{{name}}Data> {
+    this.data.set(data.id, data);
+    return data;
+  }
+
+  async update(id: string, data: Partial<{{name}}Data>): Promise<{{name}}Data> {
+    const existing = this.data.get(id);
+    if (!existing) throw new Error('Registro no encontrado');
+
+    const updated = { ...existing, ...data };
+    this.data.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string): Promise<void> {
+    this.data.delete(id);
+  }
+}
+"
+    },
+    {
+      "path": "src/types.ts",
+      "content": "export interface {{name}}Config {
+  // Define la configuración del plugin
+  enabled: boolean;
+  options?: Record<string, unknown>;
+}
+
+export interface {{name}}Data {
+  id: string;
+  // Define los datos del plugin
+  [key: string]: unknown;
+}
+"
+    },
+    {
+      "path": "__tests__/index.test.ts",
+      "content": "import { createMockPluginContext } from '@lemur-engine/testing';
+import {{name}}Plugin from '../src';
+import { {{name}}Service } from '../src/services/{{name}}Service';
+
+describe('{{name}}Plugin', () => {
+  let plugin: {{name}}Plugin;
+  let context: any;
+
+  beforeEach(() => {
+    context = createMockPluginContext();
+    plugin = new {{name}}Plugin(context);
+  });
+
+  it('debería inicializarse correctamente', async () => {
+    await plugin.initialize();
+    expect(context.logger.info).toHaveBeenCalledWith('{{name}} plugin inicializado');
+  });
+
+  it('debería registrar las dependencias correctamente', async () => {
+    await plugin.initialize();
+    const service = context.container.resolve('{{name}}Service');
+    expect(service).toBeInstanceOf({{name}}Service);
+  });
+
+  it('debería iniciar y detener servicios correctamente', async () => {
+    await plugin.initialize();
+    await plugin.start();
+    expect(context.logger.info).toHaveBeenCalledWith('{{name}} plugin iniciado');
+
+    await plugin.stop();
+    expect(context.logger.info).toHaveBeenCalledWith('{{name}} plugin detenido');
+  });
+});
+"
+    },
+    {
+      "path": "__tests__/services/{{name}}Service.test.ts",
+      "content": "import { {{name}}Service } from '../../src/services/{{name}}Service';
+import { {{name}}Repository } from '../../src/repositories/{{name}}Repository';
+
+describe('{{name}}Service', () => {
+  let service: {{name}}Service;
+  let repository: jest.Mocked<{{name}}Repository>;
+
+  beforeEach(() => {
+    repository = {
+      findAll: jest.fn(),
+      findById: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn()
+    } as any;
+
+    service = new {{name}}Service(repository);
+  });
+
+  it('debería obtener datos correctamente', async () => {
+    const mockData = [{ id: '1', value: 'test' }];
+    repository.findAll.mockResolvedValue(mockData);
+
+    const result = await service.getData();
+    expect(result).toEqual(mockData);
+    expect(repository.findAll).toHaveBeenCalled();
+  });
+
+  // Agrega más pruebas según sea necesario
+});
+"
+    },
+    {
+      "path": "README.md",
+      "content": "# {{name}} Plugin
+
+{{description}}
+
+## Instalación
+
+```bash
+npm install {{name}}
+```
+
+## Uso
+
+```typescript
+import {{name}}Plugin from '{{name}}';
+
+// Configura el plugin en tu kernel.config.json
+{
+  \"plugins\": [
+    {
+      \"name\": \"{{name}}\",
+      \"enabled\": true,
+      \"config\": {
+        \"options\": {
+          // Opciones específicas del plugin
+        }
+      }
+    }
+  ]
+}
+```
+
+## API
+
+### Endpoints
+
+- `GET /api/{{name}}` - Obtener todos los datos
+- `POST /api/{{name}}` - Crear nuevo dato
+- `PUT /api/{{name}}/:id` - Actualizar dato existente
+- `DELETE /api/{{name}}/:id` - Eliminar dato
+
+### Eventos
+
+El plugin escucha los siguientes eventos:
+
+- `system.ready` - Cuando el sistema está listo
+
+## Desarrollo
+
+### Estructura del Proyecto
+
+```
+{{name}}/
+├── src/
+│   ├── controllers/     # Controladores HTTP
+│   ├── services/        # Lógica de negocio
+│   ├── repositories/    # Acceso a datos
+│   ├── types.ts         # Definiciones de tipos
+│   └── index.ts         # Punto de entrada
+├── __tests__/          # Pruebas
+├── plugin.json         # Configuración del plugin
+└── README.md          # Documentación
+```
+
+### Scripts
+
+- `npm test` - Ejecutar pruebas
+- `npm run build` - Compilar TypeScript
+- `npm run lint` - Verificar estilo de código
+
+## Licencia
+
+MIT
+"
+    }
+  ]
+}

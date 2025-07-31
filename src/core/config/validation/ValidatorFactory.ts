@@ -2,6 +2,8 @@ import { RetryConfigValidator } from './RetryConfigValidator';
 import { BulkheadConfigValidator } from './BulkheadConfigValidator';
 import { CircuitBreakerValidator } from './CircuitBreakerValidator';
 import { PluginConfigValidator } from './PluginConfigValidator';
+import { ErrorHandlerValidator } from './ErrorHandlerValidator';
+import { LoggingConfigValidator } from './LoggingConfigValidator';
 import { ValidationChain } from './ValidationChain';
 import { ConfigValidator } from './types';
 
@@ -13,6 +15,8 @@ export class ValidatorFactory {
         ValidatorFactory.validators.set('bulkhead', BulkheadConfigValidator);
         ValidatorFactory.validators.set('circuitBreaker', CircuitBreakerValidator);
         ValidatorFactory.validators.set('plugin', PluginConfigValidator);
+        ValidatorFactory.validators.set('errorHandler', ErrorHandlerValidator);
+        ValidatorFactory.validators.set('logging', LoggingConfigValidator);
     }
 
     public static createValidator(type: string): ConfigValidator | null {

@@ -1,5 +1,5 @@
 import { RetryHandler, RetryOptions } from '../../src/core/RetryHandler';
-import { Bulkhead, BulkheadOptions } from '../../src/core/Bulkhead';
+import { Bulkhead, BulkheadOptions } from '../../src/core/_Bulkhead';
 
 async function resilientOperationExample() {
     // 1. Configurar Retry Handler
