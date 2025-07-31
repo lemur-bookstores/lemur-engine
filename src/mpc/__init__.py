@@ -4,13 +4,13 @@
 Sistema unificado de comunicación multi-protocolo que soporta:
 - HTTP/HTTPS (REST API)
 - WebSocket (Comunicación bidireccional en tiempo real)
-- gRPC (Comunicación de alto rendimiento) - Próximamente
+- gRPC (Comunicación de alto rendimiento)
 - MCP (Model Context Protocol) - Próximamente
 
-Versión: 2.0.0 (Fase 2 - WebSocket Integration)
+Versión: 3.0.0 (Fase 3 - gRPC Integration)
 """
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 __author__ = "Lemur Engine Team"
 __description__ = "Multi-Protocol Communication System"
 
@@ -33,6 +33,7 @@ from .core.connection_manager import MPCConnectionManager
 # Protocol adapters
 from .adapters.http_adapter import HTTPAdapter
 from .adapters.websocket_adapter import WebSocketAdapter
+from .adapters.grpc_adapter import GRPCAdapter
 
 __all__ = [
     # Core interfaces
@@ -52,6 +53,7 @@ __all__ = [
     # Protocol adapters
     'HTTPAdapter',
     'WebSocketAdapter',
+    'GRPCAdapter',
     
     # Metadata
     '__version__',

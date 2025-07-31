@@ -9,6 +9,11 @@ aiofiles>=23.0.0
 # WebSocket support
 websockets>=11.0.0
 
+# gRPC support (Fase 3)
+grpcio>=1.59.0
+grpcio-tools>=1.59.0
+protobuf>=4.25.0
+
 # HTTP/REST support
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
@@ -30,11 +35,6 @@ structlog>=23.2.0
 # Utilities
 python-dotenv>=1.0.0
 pydantic>=2.5.0
-
-# Optional: gRPC support (for future Phase 3)
-# grpcio>=1.59.0
-# grpcio-tools>=1.59.0
-# protobuf>=4.25.0
 
 # Optional: MCP support (for future Phase 4)
 # mcp-client>=0.1.0
