@@ -218,6 +218,14 @@ class MPCRouter(MessageRouter):
         except Exception as e:
             logger.error(f"Error recibiendo mensajes de {adapter.protocol_type}: {e}")
             
+    def get_adapter(self, protocol_type: ProtocolType) -> Optional[ProtocolAdapter]:
+        """Obtiene un adaptador por tipo de protocolo"""
+        return self._adapters.get(protocol_type)
+        
+    def get_connected_adapters(self) -> List[ProtocolAdapter]:
+        """Obtiene lista de adaptadores conectados"""
+        return [adapter for adapter in self._adapters.values() if adapter.is_connected()]
+            
     def get_adapter_status(self) -> Dict[str, Dict[str, any]]:
         """Obtiene el estado de todos los adaptadores"""
         status = {}
@@ -230,3 +238,27 @@ class MPCRouter(MessageRouter):
             }
             
         return status
+    
+    def has_mcp_support(self) -> bool:
+        """Verifica si hay soporte MCP disponible"""
+        return ProtocolType.MCP in self._adapters
+    
+    async def get_mcp_resources(self) -> List[Dict]:
+        """Obtiene recursos MCP disponibles"""
+        mcp_adapter = self.get_adapter(ProtocolType.MCP)
+        if mcp_adapter and hasattr(mcp_adapter, 'list_resources'):
+            try:
+                return await mcp_adapter.list_resources()
+            except Exception as e:
+                logger.error(f"Error obteniendo recursos MCP: {e}")
+        return []
+    
+    async def get_mcp_tools(self) -> List[Dict]:
+        """Obtiene herramientas MCP disponibles"""
+        mcp_adapter = self.get_adapter(ProtocolType.MCP)
+        if mcp_adapter and hasattr(mcp_adapter, 'list_tools'):
+            try:
+                return await mcp_adapter.list_tools()
+            except Exception as e:
+                logger.error(f"Error obteniendo herramientas MCP: {e}")
+        return []
