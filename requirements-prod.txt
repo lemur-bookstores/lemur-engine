@@ -1,0 +1,25 @@
+-r requirements.txt
+
+# Producción
+gunicorn>=21.2.0
+uvicorn[standard]>=0.23.0
+
+# Monitoreo
+sentry-sdk>=1.32.0
+
+# Base de datos
+redis>=4.6.0
+asyncpg>=0.28.0
+
+# Seguridad
+cryptography>=41.0.0
+
+# Performance
+orjson>=3.9.0
+msgpack>=1.0.0
+
+# Logging avanzado
+python-json-logger>=2.0.0
+
+# Health checks
+aiohttp-healthcheck>=1.0.0
