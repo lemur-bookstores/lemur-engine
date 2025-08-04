@@ -33,7 +33,7 @@ async function testPlugin() {
 
         // Limpiar
         await kernel.shutdown();
-    } catch (error) {
+    } catch (error: any) {
         console.error('Test error:', error);
     }
 }

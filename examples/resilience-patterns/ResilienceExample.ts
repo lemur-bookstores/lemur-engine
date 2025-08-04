@@ -41,7 +41,7 @@ async function resilientOperationExample() {
         console.log('Operation result:', result);
         console.log('Bulkhead stats:', bulkhead.getStats());
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Operation failed:', error);
     }
 }
@@ -63,7 +63,7 @@ async function parallelOperationsExample() {
                     console.log(`Operation ${i + 1} completed`);
                     return `Result ${i + 1}`;
                 });
-            } catch (error) {
+            } catch (error: any) {
                 console.error(`Operation ${i + 1} failed:`, error);
             }
         };
