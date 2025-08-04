@@ -17,7 +17,7 @@ import asyncio
 import json
 import uuid
 from typing import Any, Dict, List, Optional, AsyncGenerator, Union
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
 import logging
 from datetime import datetime
@@ -50,13 +50,12 @@ class MCPResource:
     """Recurso MCP"""
     uri: str
     name: str
-    description: str
+    resource_type: str
+    content: Any
+    description: Optional[str] = None
     mime_type: str = "text/plain"
-    metadata: Dict[str, Any] = None
-    
-    def __post_init__(self):
-        if self.metadata is None:
-            self.metadata = {}
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 
 @dataclass

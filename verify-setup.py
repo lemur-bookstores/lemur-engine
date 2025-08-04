@@ -109,7 +109,7 @@ class MCPEnvironmentValidator:
         required_files = [
             'requirements.txt',
             'setup.py',
-            'src/mcp/core/integration_system.py',
+            'src/mcp/core/integration.py',
             'examples/mcp_web_application.py'
         ]
         
@@ -144,7 +144,7 @@ class MCPEnvironmentValidator:
     def test_mcp_imports(self) -> bool:
         """Verificar que los módulos MCP se puedan importar"""
         mcp_modules = [
-            'src.mcp.core.integration_system',
+            'src.mcp.core.integration',
             'src.mcp.core.resource_manager',
             'src.mcp.plugins.filesystem_plugin'
         ]
@@ -194,13 +194,8 @@ class MCPEnvironmentValidator:
         self.total_tests += 1
         
         try:
-            # Agregar src al path
-            src_path = str(self.project_root / 'src')
-            if src_path not in sys.path:
-                sys.path.insert(0, src_path)
-            
-            # Importar y crear instancia básica
-            from mcp.core.integration_system import MCPIntegrationSystem
+            # No es necesario modificar el sys.path si se ejecuta como módulo
+            from src.mcp.core.integration import MCPIntegrationSystem
             
             # Crear instancia (sin inicializar para evitar async)
             mcp_system = MCPIntegrationSystem()
@@ -217,7 +212,7 @@ class MCPEnvironmentValidator:
     def test_example_files(self) -> bool:
         """Verificar que los archivos de ejemplo sean válidos"""
         example_files = [
-            'examples/mcp_basic_example.py',
+            'examples/mpc_basic_example.py',
             'examples/mcp_web_application.py',
             'examples/mcp_demo_application.py'
         ]

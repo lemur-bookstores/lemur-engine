@@ -185,11 +185,19 @@ class MCPResourceManager:
         elif resource_type == ResourceType.JSON.value:
             return await self._read_json_resource(resource)
         else:
-            return {
-                'content': f"Contenido del recurso {resource.name}",
-                'mime_type': resource.mime_type,
-                'metadata': resource.metadata
-            }
+            # Si el recurso tiene contenido directo, usarlo
+            if hasattr(resource, 'content') and resource.content is not None:
+                return {
+                    'content': resource.content,
+                    'mime_type': resource.mime_type,
+                    'metadata': resource.metadata
+                }
+            else:
+                return {
+                    'content': f"Contenido del recurso {resource.name}",
+                    'mime_type': resource.mime_type,
+                    'metadata': resource.metadata
+                }
     
     async def _read_file_resource(self, resource: MCPResource) -> Dict[str, Any]:
         """Lee un recurso de archivo"""

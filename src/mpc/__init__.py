@@ -34,7 +34,12 @@ from .core.connection_manager import MPCConnectionManager
 # Protocol adapters
 from .adapters.http_adapter import HTTPAdapter
 from .adapters.websocket_adapter import WebSocketAdapter
-from .adapters.grpc_adapter import GRPCAdapter
+
+# Importación condicional de GRPCAdapter
+try:
+    from .adapters.grpc_adapter import GRPCAdapter
+except ImportError:
+    GRPCAdapter = None
 
 # MCP system (Fase 5)
 try:

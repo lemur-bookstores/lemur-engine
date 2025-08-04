@@ -20,6 +20,14 @@ from .resource_manager import MCPResourceManager, MCPToolManager, ResourceType, 
 from ..adapters.mcp_adapter import MCPAdapter, MCPResource, MCPTool, MCPCapabilities, MCPTransportType
 from ..adapters.mcp_client import MCPClient, MCPServerInfo
 
+# Importación segura de adaptadores MPC - GRPCAdapter es opcional
+# try:
+#     from ...mpc.adapters import GRPCAdapter
+#     GRPC_AVAILABLE = True
+# except (ImportError, AttributeError):
+#     GRPCAdapter = None
+#     GRPC_AVAILABLE = False
+
 
 class MCPIntegrationType(Enum):
     """Tipos de integración MCP"""
@@ -256,10 +264,24 @@ class MCPIntegrationSystem:
     # === Gestión de Recursos ===
     
     def register_resource(self, 
-                         resource: MCPResource, 
+                         uri: str,
+                         name: str,
+                         resource_type: str,
+                         content: Any,
+                         description: Optional[str] = None,
                          handler: Optional[Callable] = None,
-                         server_ids: Optional[List[str]] = None) -> None:
+                         server_ids: Optional[List[str]] = None) -> MCPResource:
         """Registra un recurso en el sistema"""
+        
+        resource = MCPResource(
+            uri=uri,
+            name=name,
+            resource_type=resource_type,
+            content=content,
+            description=description
+        )
+
+
         # Registrar en el gestor
         self.resource_manager.register_resource(resource, handler)
         
@@ -275,6 +297,9 @@ class MCPIntegrationSystem:
                 adapter.register_resource(resource, handler)
         
         self.logger.info(f"Recurso registrado: {resource.uri}")
+        
+        # Retornar el recurso registrado como diccionario
+        return asdict(resource)
     
     async def read_resource(self, 
                            uri: str, 
@@ -282,8 +307,12 @@ class MCPIntegrationSystem:
         """Lee un recurso (local o remoto)"""
         # Intentar leer localmente primero
         try:
-            content = await self.resource_manager.read_resource(uri)
-            return asdict(content)
+            resource = await self.resource_manager.read_resource(uri)
+            # Retornar solo el contenido si está disponible
+            if hasattr(resource, 'content') and resource.content:
+                return resource.content
+            else:
+                return asdict(resource)
         except ValueError:
             pass
         
@@ -301,7 +330,7 @@ class MCPIntegrationSystem:
                 except:
                     continue
         
-        raise ValueError(f"Recurso no encontrado: {uri}")
+        raise ValueError(f"Resource not found: {uri}")
     
     # === Gestión de Herramientas ===
     
@@ -426,6 +455,8 @@ class MCPIntegrationSystem:
         system_info_resource = MCPResource(
             uri="mcp://system/info",
             name="System Information",
+            resource_type="INFO",
+            content={"version": "1.0.0", "status": "running"},
             description="Información del sistema MCP",
             mime_type="application/json",
             metadata={'type': 'json', 'data': {'version': '1.0.0', 'status': 'running'}}
