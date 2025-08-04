@@ -25,6 +25,7 @@ import { PluginAutoloader } from './plugins/PluginAutoloader';
 import { defaultKernelConfig, KernelConfig } from './config/types';
 import { ConfigLoader } from './config/ConfigLoader';
 import { MetricsStorage } from './interfaces/storage';
+import { MonitoringModule, MonitoringModuleConfig } from '../modules/MonitoringModule';
 
 export class Kernel {
     private config: KernelConfig;
@@ -41,12 +42,14 @@ export class Kernel {
     private bulkhead!: Bulkhead;
     private pluginAutoloader!: PluginAutoloader;
     private isInitialized = false;
+    private monitoringModule: MonitoringModule | null = null;
 
     constructor(config?: KernelConfig) {
         this.config = config || defaultKernelConfig;
         this.initializeComponents();
         this.registerCoreServices();
         this.setupErrorHandlers();
+        this.setupMonitoring();
     }
 
     private initializeComponents(): void {
@@ -68,14 +71,14 @@ export class Kernel {
 
         // Crear state manager
         this.stateManager = new KernelStateManager();
-        
+
         // Configurar los estados
         const initializingState = new InitializingState(this.stateManager);
         const runningState = new RunningState(this.stateManager);
         const maintenanceState = new MaintenanceState(this.stateManager);
         const shuttingDownState = new ShuttingDownState(this.stateManager);
         const errorState = new ErrorState(this.stateManager);
-        
+
         // Registrar los estados
         this.stateManager.registerState(KernelState.INITIALIZING, initializingState);
         this.stateManager.registerState(KernelState.RUNNING, runningState);
@@ -142,6 +145,27 @@ export class Kernel {
             // return new DatabaseMetricsStorage();
             default:
                 return new InMemoryMetricsStorage();
+        }
+    }
+
+    private setupMonitoring(): void {
+        if (this.config.monitoring) {
+            const monitoringConfig: MonitoringModuleConfig = {
+                enableTokenUsageTracking: this.config.monitoring.ai.tokenTracking.enabled,
+                enableModelPerformanceTracking: this.config.monitoring.modelPerformance.enabled,
+                enableContextQualityScoring: this.config.monitoring.ai.contextQuality.enabled,
+                contextQualityScorerConfig: {
+                    piiDetectionEnabled: this.config.monitoring.ai.contextQuality.piiDetection,
+                    harmfulContentFilterEnabled: this.config.monitoring.ai.contextQuality.harmfulContentDetection,
+                    biasDetectionEnabled: false // Currently not in config, defaults to false
+                },
+                aiConfig: this.config.monitoring.ai,
+                modelPerformanceConfig: this.config.monitoring.modelPerformance,
+                healthCheckConfig: this.config.monitoring.healthCheck,
+                reportingConfig: this.config.monitoring.reporting
+            };
+            this.monitoringModule = new MonitoringModule(monitoringConfig);
+            this.serviceContainer.register('monitoring', () => this.monitoringModule);
         }
     }
 
@@ -320,6 +344,11 @@ export class Kernel {
             // Cambiar estado a RUNNING
             await this.stateManager.getCurrentState().initialize();
 
+            // Inicializar el módulo de monitoreo si está configurado
+            if (this.monitoringModule) {
+                await this.monitoringModule.initialize(this);
+            }
+
         } catch (error: any) {
             await this.eventBus.publish({
                 id: crypto.randomUUID(),
@@ -371,6 +400,11 @@ export class Kernel {
 
         this.isInitialized = false;
 
+        // Destruir el módulo de monitoreo si existe
+        if (this.monitoringModule) {
+            await this.monitoringModule.destroy();
+        }
+
         await this.eventBus.publish({
             id: crypto.randomUUID(),
             type: 'kernel.shutdown',
@@ -385,6 +419,9 @@ export class Kernel {
     getPluginRegistry(): PluginRegistry { return this.pluginRegistry; }
     getServiceContainer(): ServiceContainer { return this.serviceContainer; }
     getConfigManager(): ConfigManager { return this.configManager; }
+    getMonitoringModule(): MonitoringModule | null {
+        return this.monitoringModule;
+    }
 
     registerPlugin(plugin: Plugin): void {
         this.pluginRegistry.register(plugin);

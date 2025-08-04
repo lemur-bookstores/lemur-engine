@@ -90,6 +90,59 @@ export interface EventsConfig {
     asyncTimeout?: number; // Opcional con valor por defecto
 }
 
+export interface MonitoringConfig {
+    ai: {
+        enabled: boolean;
+        tokenTracking: {
+            enabled: boolean;
+            alertThresholds: {
+                costPerHour: number;
+                tokensPerMinute: number;
+            };
+        };
+        latencyTracking: {
+            enabled: boolean;
+            alertThresholds: {
+                averageLatency: number;
+                p95Latency: number;
+            };
+        };
+        contextQuality: {
+            enabled: boolean;
+            minimumScore: number;
+            piiDetection: boolean;
+            harmfulContentDetection: boolean;
+        };
+        mcpOperations: {
+            enabled: boolean;
+            alertThresholds: {
+                errorRate: number;
+                responseTime: number;
+            };
+        };
+    };
+    modelPerformance: {
+        enabled: boolean;
+        trackingWindow: number; // in hours
+        alertThresholds: {
+            successRate: number;
+            averageLatency: number;
+            costEfficiency: number;
+        };
+    };
+    healthCheck: {
+        enabled: boolean;
+        interval: number; // in ms
+        timeout: number; // in ms
+    };
+    reporting: {
+        enabled: boolean;
+        interval: number; // in ms
+        destination: 'console' | 'file' | 'both';
+        filePath?: string;
+    };
+}
+
 export interface KernelConfig {
     environment: 'development' | 'staging' | 'production';
     version: string;
@@ -101,6 +154,7 @@ export interface KernelConfig {
     pluginConfig: PluginConfig;
     logging: LoggingConfig;
     events?: EventsConfig;
+    monitoring?: MonitoringConfig;
 }
 
 // 2. Configuraciones por defecto
@@ -175,5 +229,56 @@ export const defaultKernelConfig: KernelConfig = {
     events: {
         maxListeners: 100,
         asyncTimeout: 5000
+    },
+    monitoring: {
+        ai: {
+            enabled: true,
+            tokenTracking: {
+                enabled: true,
+                alertThresholds: {
+                    costPerHour: 10.0,
+                    tokensPerMinute: 1000
+                }
+            },
+            latencyTracking: {
+                enabled: true,
+                alertThresholds: {
+                    averageLatency: 2000,
+                    p95Latency: 5000
+                }
+            },
+            contextQuality: {
+                enabled: true,
+                minimumScore: 0.7,
+                piiDetection: true,
+                harmfulContentDetection: true
+            },
+            mcpOperations: {
+                enabled: true,
+                alertThresholds: {
+                    errorRate: 0.1,
+                    responseTime: 3000
+                }
+            }
+        },
+        modelPerformance: {
+            enabled: true,
+            trackingWindow: 24,
+            alertThresholds: {
+                successRate: 0.95,
+                averageLatency: 1500,
+                costEfficiency: 0.8
+            }
+        },
+        healthCheck: {
+            enabled: true,
+            interval: 30000,
+            timeout: 5000
+        },
+        reporting: {
+            enabled: true,
+            interval: 300000,
+            destination: 'console'
+        }
     }
 };
