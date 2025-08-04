@@ -1,4 +1,4 @@
-export type PluginTemplate = 'default' | 'minimal' | 'full';
+export type PluginTemplate = "default" | "minimal" | "full";
 
 export interface PluginConfig {
   name: string;
@@ -22,7 +22,7 @@ export interface TemplateFile {
 }
 
 export interface CommandOptions {
-  type: 'singleton' | 'transient';
+  type: "singleton" | "transient";
   interfaces: string;
   dependencies: string;
   plugin?: string;
@@ -42,13 +42,13 @@ export interface MonitorCommandOptions {
 
 export interface ServiceConfig {
   name: string;
-  type: 'singleton' | 'transient';
+  type: "singleton" | "transient";
   interfaces?: string[];
   dependencies?: string[];
 }
 
 export interface DeployConfig {
-  environment: 'development' | 'staging' | 'production';
+  environment: "development" | "staging" | "production";
   configPath?: string;
   dryRun?: boolean;
   force?: boolean;
@@ -73,7 +73,7 @@ export interface MonitorConfig {
 export interface AlertRule {
   metric: string;
   threshold: number;
-  operator: '>' | '<' | '==' | '>=' | '<=';
+  operator: ">" | "<" | "==" | ">=" | "<=";
   action: string;
 }
 

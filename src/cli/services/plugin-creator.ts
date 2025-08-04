@@ -1,7 +1,11 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { PluginConfig, TemplateConfig } from '../types';
-import { validateAuthor, validateDescription, validateVersion } from '../utils/validation';
+import * as fs from "fs/promises";
+import * as path from "path";
+import { PluginConfig, TemplateConfig } from "../types";
+import {
+  validateAuthor,
+  validateDescription,
+  validateVersion,
+} from "../utils/validation";
 
 export async function createPlugin(config: PluginConfig): Promise<void> {
   // Validaciones adicionales
@@ -13,7 +17,7 @@ export async function createPlugin(config: PluginConfig): Promise<void> {
   const template = await loadTemplate(config.template);
 
   // Crear directorio del plugin
-  const pluginDir = path.join(process.cwd(), 'plugins', config.name);
+  const pluginDir = path.join(process.cwd(), "plugins", config.name);
   await fs.mkdir(pluginDir, { recursive: true });
 
   // Generar plugin.json
@@ -22,16 +26,16 @@ export async function createPlugin(config: PluginConfig): Promise<void> {
     version: config.version,
     description: config.description || `Plugin ${config.name}`,
     author: config.author,
-    main: config.typescript ? 'dist/index.js' : 'index.js',
-    types: config.typescript ? 'dist/index.d.ts' : undefined,
+    main: config.typescript ? "dist/index.js" : "index.js",
+    types: config.typescript ? "dist/index.d.ts" : undefined,
     dependencies: config.dependencies,
     tags: [],
-    permissions: []
+    permissions: [],
   };
 
   await fs.writeFile(
-    path.join(pluginDir, 'plugin.json'),
-    JSON.stringify(pluginJson, null, 2)
+    path.join(pluginDir, "plugin.json"),
+    JSON.stringify(pluginJson, null, 2),
   );
 
   // Generar archivos de la plantilla
@@ -41,7 +45,7 @@ export async function createPlugin(config: PluginConfig): Promise<void> {
 
     // Crear directorios necesarios
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    
+
     // Escribir archivo
     await fs.writeFile(filePath, fileContent);
   }
@@ -49,32 +53,40 @@ export async function createPlugin(config: PluginConfig): Promise<void> {
   // Si es TypeScript, crear tsconfig.json
   if (config.typescript) {
     const tsConfig = {
-      extends: '../../tsconfig.json',
+      extends: "../../tsconfig.json",
       compilerOptions: {
-        outDir: './dist',
-        rootDir: './src'
+        outDir: "./dist",
+        rootDir: "./src",
       },
-      include: ['src/**/*'],
-      exclude: ['node_modules', '**/*.test.ts']
+      include: ["src/**/*"],
+      exclude: ["node_modules", "**/*.test.ts"],
     };
 
     await fs.writeFile(
-      path.join(pluginDir, 'tsconfig.json'),
-      JSON.stringify(tsConfig, null, 2)
+      path.join(pluginDir, "tsconfig.json"),
+      JSON.stringify(tsConfig, null, 2),
     );
   }
 }
 
 async function loadTemplate(templateName: string): Promise<TemplateConfig> {
-  const templatePath = path.join(__dirname, '..', 'templates', `${templateName}.json`);
-  const templateContent = await fs.readFile(templatePath, 'utf-8');
+  const templatePath = path.join(
+    __dirname,
+    "..",
+    "templates",
+    `${templateName}.json`,
+  );
+  const templateContent = await fs.readFile(templatePath, "utf-8");
   return JSON.parse(templateContent);
 }
 
 function processTemplate(content: string, config: PluginConfig): string {
   return content
     .replace(/\{\{name\}\}/g, config.name)
-    .replace(/\{\{description\}\}/g, config.description || `Plugin ${config.name}`)
-    .replace(/\{\{author\}\}/g, config.author || '')
+    .replace(
+      /\{\{description\}\}/g,
+      config.description || `Plugin ${config.name}`,
+    )
+    .replace(/\{\{author\}\}/g, config.author || "")
     .replace(/\{\{version\}\}/g, config.version);
 }

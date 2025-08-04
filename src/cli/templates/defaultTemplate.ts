@@ -1,10 +1,12 @@
-{
-  "name": "default",
-  "description": "Plantilla estándar para plugins de Lemur Engine",
-  "files": [
+import { TemplateConfig } from "../types";
+
+export const defaultTemplate: TemplateConfig = {
+  name: "default",
+  description: "Plantilla estándar para plugins de Lemur Engine",
+  files: [
     {
-      "path": "src/index.ts",
-      "content": "import { Plugin, PluginContext } from '@lemur-engine/core';
+      path: "src/index.ts",
+      content: `import { Plugin, PluginContext } from '@lemur-engine/core';
 
 export default class {{name}}Plugin implements Plugin {
   constructor(private context: PluginContext) {}
@@ -20,22 +22,21 @@ export default class {{name}}Plugin implements Plugin {
   async stop(): Promise<void> {
     this.context.logger.info('Deteniendo {{name}} plugin');
   }
-}
-"
+}`,
     },
     {
-      "path": "src/services/index.ts",
-      "content": "// Exporta tus servicios aquí
-"
+      path: "src/services/index.ts",
+      content: `// Exporta tus servicios aquí
+`,
     },
     {
-      "path": "src/types.ts",
-      "content": "// Define tus tipos aquí
-"
+      path: "src/types.ts",
+      content: `// Define tus tipos aquí
+`,
     },
     {
-      "path": "__tests__/index.test.ts",
-      "content": "import { createMockPluginContext } from '@lemur-engine/testing';
+      path: "__tests__/index.test.ts",
+      content: `import { createMockPluginContext } from '@lemur-engine/testing';
 import {{name}}Plugin from '../src';
 
 describe('{{name}}Plugin', () => {
@@ -62,35 +63,35 @@ describe('{{name}}Plugin', () => {
     expect(context.logger.info).toHaveBeenCalledWith('Deteniendo {{name}} plugin');
   });
 });
-"
+`,
     },
     {
-      "path": "README.md",
-      "content": "# {{name}} Plugin
+      path: "README.md",
+      content: `# {{name}} Plugin
 
 {{description}}
 
 ## Instalación
 
-```bash
+\`\`\`bash
 npm install {{name}}
-```
+\`\`\`
 
 ## Uso
 
-```typescript
+\`\`\`typescript
 import {{name}}Plugin from '{{name}}';
 
 // Configura el plugin en tu kernel.config.json
 {
-  \"plugins\": [
+  "plugins": [
     {
-      \"name\": \"{{name}}\",
-      \"enabled\": true
+      "name": "{{name}}",
+      "enabled": true
     }
   ]
 }
-```
+\`\`\`
 
 ## Configuración
 
@@ -103,7 +104,7 @@ Describe aquí la API pública del plugin.
 ## Licencia
 
 MIT
-"
-    }
-  ]
-}
+`,
+    },
+  ],
+};

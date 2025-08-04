@@ -1,10 +1,13 @@
-{
-  "name": "full",
-  "description": "Plantilla completa con todas las funcionalidades para plugins de Lemur Engine",
-  "files": [
+import { TemplateConfig } from "../types";
+
+export const fullTemplate: TemplateConfig = {
+  name: "full",
+  description:
+    "Plantilla completa con todas las funcionalidades para plugins de Lemur Engine",
+  files: [
     {
-      "path": "src/index.ts",
-      "content": "import { Plugin, PluginContext, PluginConfig } from '@lemur-engine/core';
+      path: "src/index.ts",
+      content: `import { Plugin, PluginContext, PluginConfig } from '@lemur-engine/core';
 import { {{name}}Service } from './services/{{name}}Service';
 import { {{name}}Controller } from './controllers/{{name}}Controller';
 import { {{name}}Repository } from './repositories/{{name}}Repository';
@@ -56,12 +59,11 @@ export default class {{name}}Plugin implements Plugin {
 
     this.context.logger.info('{{name}} plugin detenido');
   }
-}
-"
+}`,
     },
     {
-      "path": "src/services/{{name}}Service.ts",
-      "content": "import { Injectable } from '@lemur-engine/core';
+      path: "src/services/{{name}}Service.ts",
+      content: `import { Injectable } from '@lemur-engine/core';
 import { {{name}}Repository } from '../repositories/{{name}}Repository';
 import { {{name}}Data } from '../types';
 
@@ -92,12 +94,11 @@ export class {{name}}Service {
   async deleteData(id: string): Promise<void> {
     await this.repository.delete(id);
   }
-}
-"
+}`,
     },
     {
-      "path": "src/controllers/{{name}}Controller.ts",
-      "content": "import { Controller, Get, Post, Put, Delete } from '@lemur-engine/core';
+      path: "src/controllers/{{name}}Controller.ts",
+      content: `import { Controller, Get, Post, Put, Delete } from '@lemur-engine/core';
 import { {{name}}Service } from '../services/{{name}}Service';
 import { {{name}}Data } from '../types';
 
@@ -128,12 +129,11 @@ export class {{name}}Controller {
   registerRoutes(): void {
     // Las rutas se registran automáticamente gracias a los decoradores
   }
-}
-"
+}`,
     },
     {
-      "path": "src/repositories/{{name}}Repository.ts",
-      "content": "import { Injectable } from '@lemur-engine/core';
+      path: "src/repositories/{{name}}Repository.ts",
+      content: `import { Injectable } from '@lemur-engine/core';
 import { {{name}}Data } from '../types';
 
 @Injectable()
@@ -165,12 +165,11 @@ export class {{name}}Repository {
   async delete(id: string): Promise<void> {
     this.data.delete(id);
   }
-}
-"
+}`,
     },
     {
-      "path": "src/types.ts",
-      "content": "export interface {{name}}Config {
+      path: "src/types.ts",
+      content: `export interface {{name}}Config {
   // Define la configuración del plugin
   enabled: boolean;
   options?: Record<string, unknown>;
@@ -180,12 +179,11 @@ export interface {{name}}Data {
   id: string;
   // Define los datos del plugin
   [key: string]: unknown;
-}
-"
+}`,
     },
     {
-      "path": "__tests__/index.test.ts",
-      "content": "import { createMockPluginContext } from '@lemur-engine/testing';
+      path: "__tests__/index.test.ts",
+      content: `import { createMockPluginContext } from '@lemur-engine/testing';
 import {{name}}Plugin from '../src';
 import { {{name}}Service } from '../src/services/{{name}}Service';
 
@@ -217,12 +215,11 @@ describe('{{name}}Plugin', () => {
     await plugin.stop();
     expect(context.logger.info).toHaveBeenCalledWith('{{name}} plugin detenido');
   });
-});
-"
+});`,
     },
     {
-      "path": "__tests__/services/{{name}}Service.test.ts",
-      "content": "import { {{name}}Service } from '../../src/services/{{name}}Service';
+      path: "__tests__/services/{{name}}Service.test.ts",
+      content: `import { {{name}}Service } from '../../src/services/{{name}}Service';
 import { {{name}}Repository } from '../../src/repositories/{{name}}Repository';
 
 describe('{{name}}Service', () => {
@@ -251,62 +248,61 @@ describe('{{name}}Service', () => {
   });
 
   // Agrega más pruebas según sea necesario
-});
-"
+});`,
     },
     {
-      "path": "README.md",
-      "content": "# {{name}} Plugin
+      path: "README.md",
+      content: `# {{name}} Plugin
 
 {{description}}
 
 ## Instalación
 
-```bash
+\`\`\`bash
 npm install {{name}}
-```
+\`\`\`
 
 ## Uso
 
-```typescript
+\`\`\`typescript
 import {{name}}Plugin from '{{name}}';
 
 // Configura el plugin en tu kernel.config.json
 {
-  \"plugins\": [
+  "plugins": [
     {
-      \"name\": \"{{name}}\",
-      \"enabled\": true,
-      \"config\": {
-        \"options\": {
+      "name": "{{name}}",
+      "enabled": true,
+      "config": {
+        "options": {
           // Opciones específicas del plugin
         }
       }
     }
   ]
 }
-```
+\`\`\`
 
 ## API
 
 ### Endpoints
 
-- `GET /api/{{name}}` - Obtener todos los datos
-- `POST /api/{{name}}` - Crear nuevo dato
-- `PUT /api/{{name}}/:id` - Actualizar dato existente
-- `DELETE /api/{{name}}/:id` - Eliminar dato
+- \`GET /api/{{name}}\` - Obtener todos los datos
+- \`POST /api/{{name}}\` - Crear nuevo dato
+- \`PUT /api/{{name}}/:id\` - Actualizar dato existente
+- \`DELETE /api/{{name}}/:id\` - Eliminar dato
 
 ### Eventos
 
 El plugin escucha los siguientes eventos:
 
-- `system.ready` - Cuando el sistema está listo
+- \`system.ready\` - Cuando el sistema está listo
 
 ## Desarrollo
 
 ### Estructura del Proyecto
 
-```
+\`\`\`
 {{name}}/
 ├── src/
 │   ├── controllers/     # Controladores HTTP
@@ -317,18 +313,99 @@ El plugin escucha los siguientes eventos:
 ├── __tests__/          # Pruebas
 ├── plugin.json         # Configuración del plugin
 └── README.md          # Documentación
-```
+\`\`\`
 
 ### Scripts
 
-- `npm test` - Ejecutar pruebas
-- `npm run build` - Compilar TypeScript
-- `npm run lint` - Verificar estilo de código
+- \`npm test\` - Ejecutar pruebas
+- \`npm run build\` - Compilar TypeScript
+- \`npm run lint\` - Verificar estilo de código
 
 ## Licencia
 
-MIT
-"
-    }
-  ]
-}
+MIT`,
+    },
+    {
+      path: "package.json",
+      content: `{
+  "name": "{{name}}",
+  "version": "1.0.0",
+  "description": "{{description}}",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@lemur-engine/core": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^18.0.0",
+    "@lemur-engine/testing": "^1.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/__tests__/**/*.test.ts"]
+  }
+}`,
+    },
+    {
+      path: "tsconfig.json",
+      content: `{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "__tests__"]
+}`,
+    },
+    {
+      path: ".eslintrc.js",
+      content: `module.exports = {
+  parser: '@typescript-eslint/parser',
+  plugins: ['@typescript-eslint'],
+  extends: [
+    'eslint:recommended',
+    '@typescript-eslint/recommended'
+  ],
+  root: true,
+  env: {
+    node: true,
+    jest: true,
+  },
+  rules: {
+    '@typescript-eslint/interface-name-prefix': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
+  },
+};`,
+    },
+  ],
+};
