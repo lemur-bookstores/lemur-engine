@@ -1,21 +1,28 @@
-import { Command } from 'commander';
-import { createPlugin } from '../services/plugin-creator';
-import { validatePluginName } from '../utils/validation';
-import { PluginTemplate } from '../types';
+import { Command } from "commander";
+import { createPlugin } from "../services/plugin-creator";
+import { validatePluginName } from "../utils/validation";
+import { PluginTemplate } from "../types";
 
 export function createPluginCommand(): Command {
-  const command = new Command('create');
+  const command = new Command("create");
 
   command
-    .command('plugin')
-    .description('Crear un nuevo plugin')
-    .argument('<nombre-plugin>', 'Nombre del plugin')
-    .option('-t, --template <nombre>', 'Plantilla base (default, minimal, full)', 'default')
-    .option('--typescript', 'Usar TypeScript', true)
-    .option('-d, --description <desc>', 'Descripción del plugin')
-    .option('-a, --author <autor>', 'Autor del plugin')
-    .option('-v, --version <version>', 'Versión inicial', '1.0.0')
-    .option('--dependencies <deps>', 'Lista de dependencias separadas por comas')
+    .command("plugin")
+    .description("Crear un nuevo plugin")
+    .argument("<nombre-plugin>", "Nombre del plugin")
+    .option(
+      "-t, --template <nombre>",
+      "Plantilla base (default, minimal, full)",
+      "default",
+    )
+    .option("--typescript", "Usar TypeScript", true)
+    .option("-d, --description <desc>", "Descripción del plugin")
+    .option("-a, --author <autor>", "Autor del plugin")
+    .option("-v, --version <version>", "Versión inicial", "1.0.0")
+    .option(
+      "--dependencies <deps>",
+      "Lista de dependencias separadas por comas",
+    )
     .action(async (pluginName: string, options) => {
       try {
         // Validar nombre del plugin
@@ -29,15 +36,16 @@ export function createPluginCommand(): Command {
           description: options.description,
           author: options.author,
           version: options.version,
-          dependencies: options.dependencies?.split(',').map(d => d.trim()) || []
+          dependencies:
+            options.dependencies?.split(",").map((d: string) => d.trim()) || [],
         };
 
         // Crear plugin
         await createPlugin(pluginConfig);
 
         console.log(`✅ Plugin ${pluginName} creado exitosamente`);
-      } catch (error) {
-        console.error('❌ Error al crear el plugin:', error.message);
+      } catch (error: any) {
+        console.error("❌ Error al crear el plugin:", error.message);
         process.exit(1);
       }
     });

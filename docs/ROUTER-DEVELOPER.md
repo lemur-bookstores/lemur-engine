@@ -141,7 +141,7 @@ class CircuitBreaker {
       const result = await operation();
       this.onSuccess();
       return result;
-    } catch (error) {
+    } catch (error: any) {
       this.onFailure();
       throw error;
     }
@@ -535,7 +535,7 @@ class PluginEventBus {
     for (const handler of handlers) {
       try {
         await handler.handle(event, sourceContext);
-      } catch (error) {
+      } catch (error: any) {
         // Aislamiento de errores entre plugins
         console.error(`Plugin event handler error:`, error);
       }
@@ -1104,6 +1104,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -1136,6 +1137,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -1241,6 +1243,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -1273,6 +1276,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -1378,6 +1382,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -1410,6 +1415,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -1515,6 +1521,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -1547,6 +1554,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -1652,6 +1660,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -1684,6 +1693,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -1789,6 +1799,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -1821,6 +1832,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -1926,6 +1938,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -1958,6 +1971,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -2063,6 +2077,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -2095,6 +2110,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -2200,6 +2216,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -2232,6 +2249,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -2337,6 +2355,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -2369,6 +2388,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -2474,6 +2494,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -2506,6 +2527,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -2611,6 +2633,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -2643,6 +2666,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -2748,6 +2772,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -2780,6 +2805,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}
@@ -2885,6 +2911,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 3. **Observer Pattern para Actualizaciones**
+
    ```typescript
    class UIStateManager {
      private observers: Set<UIObserver> = new Set();
@@ -2917,6 +2944,7 @@ Para implementar esto de manera eficiente, sugiero:
    ```
 
 2. **Servicio de UI**
+
    ```typescript
    class UIService {
      constructor(private renderer: RenderEngine) {}

@@ -1131,7 +1131,7 @@ class EvaluacionMCPExtension implements PluginMCPExtension {
         status: "created",
         message: `Evaluación "${args.titulo}" creada exitosamente`,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         id: null,
         status: "error",
@@ -1162,7 +1162,7 @@ class EvaluacionMCPExtension implements PluginMCPExtension {
         promedio: resultado.promedio,
         totalEvaluaciones: resultado.total,
       };
-    } catch (error) {
+    } catch (error: any) {
       throw new MCPError(`Error consultando notas: ${error.message}`);
     }
   }

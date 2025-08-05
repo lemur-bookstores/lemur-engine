@@ -247,7 +247,7 @@ class MCPWebApplication:
                             ...options
                         });
                         return await response.json();
-                    } catch (error) {
+                    } catch (error: any) {
                         log('Error API: ' + error.message);
                         return { success: false, error: error.message };
                     }

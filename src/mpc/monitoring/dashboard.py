@@ -474,7 +474,7 @@ class DashboardServer:
                     try {
                         const data = JSON.parse(event.data);
                         this.handleMessage(data);
-                    } catch (error) {
+                    } catch (error: any) {
                         console.error('Error parsing WebSocket message:', error);
                     }
                 };

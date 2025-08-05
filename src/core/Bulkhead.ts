@@ -2,148 +2,149 @@
  * Opciones para la configuración del bulkhead
  */
 export interface BulkheadOptions {
-    maxConcurrent: number;
-    maxQueued: number;
-    timeout?: number;
+  maxConcurrent: number;
+  maxQueued: number;
+  timeout?: number;
 }
 
 /**
  * Error específico para cuando se excede la capacidad del bulkhead
  */
 export class BulkheadRejectedError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'BulkheadRejectedError';
-    }
+  constructor(message: string) {
+    super(message);
+    this.name = "BulkheadRejectedError";
+  }
 }
 
 /**
  * Implementación del Bulkhead Pattern para aislamiento de recursos
  */
 export class Bulkhead {
-    private executing: Set<Promise<any>> = new Set();
-    private queue: Array<{
-        operation: () => Promise<any>;
-        resolve: (value: any) => void;
-        reject: (error: Error) => void;
-        timeoutId?: NodeJS.Timeout;
-    }> = [];
+  private executing: Set<Promise<any>> = new Set();
+  private queue: Array<{
+    operation: () => Promise<any>;
+    resolve: (value: any) => void;
+    reject: (error: Error) => void;
+    timeoutId?: NodeJS.Timeout;
+  }> = [];
 
-    constructor(private options: BulkheadOptions) {
-        // Solo establecer timeout si se proporciona explícitamente
-        // No modificamos this.options.timeout aquí, mantenemos el valor original
+  constructor(private options: BulkheadOptions) {
+    // Solo establecer timeout si se proporciona explícitamente
+    // No modificamos this.options.timeout aquí, mantenemos el valor original
+  }
+
+  /**
+   * Ejecuta una operación dentro del bulkhead
+   */
+  async execute<T>(operation: () => Promise<T>): Promise<T> {
+    // Si hay espacio para ejecutar inmediatamente
+    if (this.executing.size < this.options.maxConcurrent) {
+      return this.executeOperation(operation);
     }
 
-    /**
-     * Ejecuta una operación dentro del bulkhead
-     */
-    async execute<T>(operation: () => Promise<T>): Promise<T> {
-        // Si hay espacio para ejecutar inmediatamente
-        if (this.executing.size < this.options.maxConcurrent) {
-            return this.executeOperation(operation);
-        }
-
-        // Si hay espacio en la cola
-        if (this.queue.length < this.options.maxQueued) {
-            return this.queueOperation(operation);
-        }
-
-        throw new BulkheadRejectedError('Bulkhead capacity exceeded');
+    // Si hay espacio en la cola
+    if (this.queue.length < this.options.maxQueued) {
+      return this.queueOperation(operation);
     }
 
-    /**
-     * Ejecuta una operación inmediatamente
-     */
-    private async executeOperation<T>(operation: () => Promise<T>): Promise<T> {
-        const operationPromise = operation();
-        this.executing.add(operationPromise);
+    throw new BulkheadRejectedError("Bulkhead capacity exceeded");
+  }
 
-        try {
-            let result: T;
-            
-            // Solo aplicar timeout si está configurado
-            if (this.options.timeout !== undefined) {
-                result = await Promise.race([
-                    operationPromise,
-                    this.createTimeout()
-                ]);
-            } else {
-                result = await operationPromise;
-            }
+  /**
+   * Ejecuta una operación inmediatamente
+   */
+  private async executeOperation<T>(operation: () => Promise<T>): Promise<T> {
+    const operationPromise = operation();
+    this.executing.add(operationPromise);
 
-            this.executing.delete(operationPromise);
-            this.processQueue();
+    try {
+      let result: T;
 
-            return result;
-        } catch (error) {
-            this.executing.delete(operationPromise);
-            this.processQueue();
-            throw error;
-        }
+      // Solo aplicar timeout si está configurado
+      if (this.options.timeout !== undefined) {
+        result = await Promise.race([operationPromise, this.createTimeout()]);
+      } else {
+        result = await operationPromise;
+      }
+
+      this.executing.delete(operationPromise);
+      this.processQueue();
+
+      return result;
+    } catch (error: any) {
+      this.executing.delete(operationPromise);
+      this.processQueue();
+      throw error;
+    }
+  }
+
+  /**
+   * Encola una operación para ejecutar cuando haya capacidad
+   */
+  private queueOperation<T>(operation: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timeoutId =
+        this.options.timeout !== undefined
+          ? setTimeout(() => {
+              const index = this.queue.findIndex(
+                (q) => q.timeoutId === timeoutId,
+              );
+              if (index !== -1) {
+                this.queue.splice(index, 1);
+                reject(new Error("Operation timed out while queued"));
+              }
+            }, this.options.timeout)
+          : undefined;
+
+      this.queue.push({ operation, resolve, reject, timeoutId });
+    });
+  }
+
+  /**
+   * Procesa la cola de operaciones pendientes
+   */
+  private processQueue(): void {
+    if (
+      this.queue.length === 0 ||
+      this.executing.size >= this.options.maxConcurrent
+    ) {
+      return;
     }
 
-    /**
-     * Encola una operación para ejecutar cuando haya capacidad
-     */
-    private queueOperation<T>(operation: () => Promise<T>): Promise<T> {
-        return new Promise((resolve, reject) => {
-            const timeoutId = this.options.timeout !== undefined
-                ? setTimeout(() => {
-                    const index = this.queue.findIndex(q => q.timeoutId === timeoutId);
-                    if (index !== -1) {
-                        this.queue.splice(index, 1);
-                        reject(new Error('Operation timed out while queued'));
-                    }
-                }, this.options.timeout)
-                : undefined;
-
-            this.queue.push({ operation, resolve, reject, timeoutId });
-        });
+    const next = this.queue.shift()!;
+    if (next.timeoutId) {
+      clearTimeout(next.timeoutId);
     }
 
-    /**
-     * Procesa la cola de operaciones pendientes
-     */
-    private processQueue(): void {
-        if (this.queue.length === 0 || this.executing.size >= this.options.maxConcurrent) {
-            return;
-        }
+    this.executeOperation(next.operation).then(next.resolve).catch(next.reject);
+  }
 
-        const next = this.queue.shift()!;
-        if (next.timeoutId) {
-            clearTimeout(next.timeoutId);
-        }
-
-        this.executeOperation(next.operation)
-            .then(next.resolve)
-            .catch(next.reject);
+  /**
+   * Crea una promesa de timeout
+   */
+  private createTimeout(): Promise<never> {
+    if (this.options.timeout === undefined) {
+      // Si no hay timeout configurado, retornar una promesa que nunca se resuelve
+      return new Promise(() => {});
     }
 
-    /**
-     * Crea una promesa de timeout
-     */
-    private createTimeout(): Promise<never> {
-        if (this.options.timeout === undefined) {
-            // Si no hay timeout configurado, retornar una promesa que nunca se resuelve
-            return new Promise(() => {});
-        }
-        
-        return new Promise((_, reject) => {
-            setTimeout(() => {
-                reject(new Error('Operation timed out'));
-            }, this.options.timeout);
-        });
-    }
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Operation timed out"));
+      }, this.options.timeout);
+    });
+  }
 
-    /**
-     * Obtiene estadísticas actuales del bulkhead
-     */
-    getStats() {
-        return {
-            executing: this.executing.size,
-            queued: this.queue.length,
-            maxConcurrent: this.options.maxConcurrent,
-            maxQueued: this.options.maxQueued
-        };
-    }
+  /**
+   * Obtiene estadísticas actuales del bulkhead
+   */
+  getStats() {
+    return {
+      executing: this.executing.size,
+      queued: this.queue.length,
+      maxConcurrent: this.options.maxConcurrent,
+      maxQueued: this.options.maxQueued,
+    };
+  }
 }

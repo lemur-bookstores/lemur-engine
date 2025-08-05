@@ -58,7 +58,7 @@ export class CachePlugin implements Plugin {
             kernel.getServiceContainer().register('cacheService', () => this.cacheService);
 
             this.currentStatus = PluginStatus.ACTIVE;
-        } catch (error) {
+        } catch (error: any) {
             this.currentStatus = PluginStatus.ERROR;
             throw error;
         }

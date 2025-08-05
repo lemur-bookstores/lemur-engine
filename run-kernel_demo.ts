@@ -121,7 +121,7 @@ async function main() {
         await kernel.shutdown();
         console.log('✅ Kernel detenido exitosamente!');
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('❌ Error durante la ejecución:', error);
         process.exit(1);
     }

@@ -38,7 +38,7 @@ async function stateManagementExample() {
         // 6. Manejo de errores en diferentes estados
         try {
             throw new Error('Error de prueba');
-        } catch (error) {
+        } catch (error: any) {
             await kernel.handleError(new KernelError('Error durante operación normal', {
                 code: 'TEST_ERROR',
                 details: { originalError: error },
@@ -75,7 +75,7 @@ async function stateManagementExample() {
         await kernel.shutdown();
         console.log('Estado final:', kernel.getState()); // SHUTTING_DOWN
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error en el ejemplo:', error);
         throw error;
     }

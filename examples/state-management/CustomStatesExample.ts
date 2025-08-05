@@ -125,7 +125,7 @@ export class BackupState extends BaseKernelState {
         try {
             await this.performBackup();
             await this.manager.transitionTo(KernelState.RUNNING);
-        } catch (error) {
+        } catch (error: any) {
             this.backupInProgress = false;
             throw error;
         }

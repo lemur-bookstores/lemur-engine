@@ -1,0 +1,16 @@
+# Archivos que Prettier debe ignorar
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.env
+.env.*
+
+# Templates de CLI - contienen strings multi-línea no válidos en JSON
+src/cli/templates/**/*.json
+
+# Archivos de configuración específicos
+*.config.js
+*.config.ts
+jest.config.js
